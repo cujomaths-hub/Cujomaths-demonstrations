@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>3D Point-to-Line Distance Demonstrator | Specialist Mathematics</title>
+    <!-- React + Babel from CDN (no build step needed) -->
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f8fafc;
+            margin: 0;
+            padding: 24px 20px;
+            color: #0f172a;
+        }
+
+        .page {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* Hero section */
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 32px;
+            background: white;
+            padding: 24px 28px;
+            border-radius: 28px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .badge {
+            background: #eef2ff;
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        .hero h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.8rem;
+        }
+
+        .hero p {
+            margin: 0;
+            color: #334155;
+        }
+
+        /* Cards & layout */
+        .mainGrid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 28px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 860px) {
+            .mainGrid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #e2e8f0;
+            padding: 20px 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            transition: all 0.1s ease;
+        }
+
+        .inputsCard {
+            align-self: start;
+        }
+
+        .methodCard {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            background: #fefefe;
+        }
+
+        .tabs.three button {
+            flex: 1;
+        }
+
+        .tab {
+            background: transparent;
+            border: none;
+            padding: 14px 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .tab.active {
+            color: #0f172a;
+            border-bottom: 2px solid #3b82f6;
+            background: #fafcff;
+        }
+
+        .methodGrid {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding: 20px 24px 24px 24px;
+        }
+
+        /* Input groups */
+        .inputGroup {
+            margin-bottom: 20px;
+        }
+
+        .inputGroup label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+
+        .triple {
+            display: flex;
+            gap: 12px;
+        }
+
+        .triple input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            font-family: monospace;
+            background: #ffffff;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 12px;
+        }
+
+        .representationBox {
+            background: #f1f5f9;
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin: 16px 0 8px;
+        }
+
+        .buttonRow {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .pill {
+            background: #e2e8f0;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .activePill {
+            background: #0f172a;
+            color: white;
+        }
+
+        .formulaBox {
+            font-family: monospace;
+            background: white;
+            padding: 12px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            margin: 8px 0 4px;
+        }
+
+        .workingCard h2 {
+            font-size: 1.3rem;
+            margin: 0 0 8px 0;
+        }
+
+        .muted {
+            color: #475569;
+            font-size: 0.85rem;
+        }
+
+        .rowBetween {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .workingHeader {
+            margin: 16px 0 12px;
+        }
+
+        .outlineButton {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .outlineButton.small {
+            font-size: 0.75rem;
+            padding: 4px 12px;
+        }
+
+        .working {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 12px 16px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin: 12px 0;
+        }
+
+        .answer {
+            font-weight: 700;
+            background: #e6f0ff;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .note {
+            font-size: 0.8rem;
+            background: #fef9e3;
+            padding: 10px 14px;
+            border-radius: 20px;
+            margin-top: 14px;
+        }
+
+        .diagramCard {
+            background: #fefefe;
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            padding: 12px;
+        }
+
+        .diagramSvg {
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 16px;
+            margin: 8px 0;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 12px 8px;
+            font-size: 0.75rem;
+        }
+
+        .swatch {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 20px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        .swatch.purple { background: #7c3aed; }
+        .swatch.blue { background: #2563eb; }
+        .swatch.green { background: #059669; }
+        .swatch.black { background: #0f172a; }
+
+        .caption {
+            font-size: 0.7rem;
+            color: #475569;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .lowerCard {
+            margin-top: 16px;
+        }
+
+        .tabContent {
+            padding: 20px 0 8px;
+        }
+
+        .tiny {
+            font-size: 0.7rem;
+            color: #5b6e8c;
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+    // ---------- Utility functions (same as original) ----------
+    function dot(u, v) { return u.reduce((sum, value, i) => sum + value * v[i], 0); }
+    function cross(u, v) { return [ u[1]*v[2] - u[2]*v[1], u[2]*v[0] - u[0]*v[2], u[0]*v[1] - u[1]*v[0] ]; }
+    function mag(u) { return Math.sqrt(dot(u, u)); }
+    function sub(u, v) { return u.map((value, i) => value - v[i]); }
+    function add(u, v) { return u.map((value, i) => value + v[i]); }
+    function mul(k, u) { return u.map(value => k * value); }
+    function fmt(n, dp = 3) { if (!Number.isFinite(n)) return "undefined"; if (Number.isInteger(n)) return String(n); return Number(n.toFixed(dp)).toString(); }
+    function gcd(a,b) { a=Math.abs(a); b=Math.abs(b); while(b) [a,b]=[b,a%b]; return a||1; }
+    function simplifySqrt(n) { if (n<0 || !Number.isInteger(n)) return `√${n}`; let outside=1, inside=n; for(let i=2;i*i<=inside;i++){ while(inside%(i*i)===0){ outside*=i; inside/=i*i; } } if(inside===1) return String(outside); if(outside===1) return `√${inside}`; return `${outside}√${inside}`; }
+    function exactDistanceText(areaSquared, vSquared) { if(!Number.isInteger(areaSquared)||!Number.isInteger(vSquared)||vSquared===0) return "not available"; const common=gcd(areaSquared, vSquared); const top=areaSquared/common; const bottom=vSquared/common; if(bottom===1) return simplifySqrt(top); return `${simplifySqrt(top)} / ${simplifySqrt(bottom)}`; }
+    function vecText(v) { return `(${v.map(x=>fmt(x)).join(", ")})`; }
+    function fractionLine(A, v) { const labels=["x","y","z"]; const parts=[]; const fixed=[]; labels.forEach((label,i)=>{ if(v[i]===0) { fixed.push(`${label} = ${fmt(A[i])}`); return; } const shift = A[i]===0 ? label : A[i]>0 ? `${label} - ${fmt(A[i])}` : `${label} + ${fmt(Math.abs(A[i]))}`; parts.push(`(${shift})/${fmt(v[i])}`); }); if(parts.length===0) return "No Cartesian form: the direction vector is zero."; return [...fixed, parts.join(" = ")].join(", "); }
+
+
+    const NumberTriple = ({ label, values, onChange }) => {
+        return React.createElement("div", { className: "inputGroup" },
+            React.createElement("label", null, label),
+            React.createElement("div", { className: "triple" },
+                values.map((value, idx) => React.createElement("input", { key: idx, type: "number", step: "1", value: value, onChange: (e) => { const next = [...values]; next[idx] = Number(e.target.value); onChange(next); } }))
+            )
+        );
+    };
+
+    const Legend = () => React.createElement("div", { className: "legend" },
+        React.createElement("div", null, React.createElement("span", { className: "swatch purple" }), "direction vector v"),
+        React.createElement("div", null, React.createElement("span", { className: "swatch blue" }), "AP"),
+        React.createElement("div", null, React.createElement("span", { className: "swatch green" }), "projection / AN"),
+        React.createElement("div", null, React.createElement("span", { className: "swatch black" }), "perpendicular distance PN")
+    );
+
+    const ProjectionDiagram = ({ A, P, v, mode }) => {
+        const AP = sub(P, A);
+        const vMag2 = dot(v, v) || 1;
+        const t = dot(AP, v) / vMag2;
+        const foot = add(A, mul(t, v));
+        const B = add(A, v);
+        const C = add(B, AP);
+        const points = [A, P, B, C, foot, add(A, mul(-2, v)), add(A, mul(2, v))];
+        const xs = points.map(p => p[0]), ys = points.map(p => p[1]);
+        const minX = Math.min(...xs, -2) - 2, maxX = Math.max(...xs, 2) + 2;
+        const minY = Math.min(...ys, -2) - 2, maxY = Math.max(...ys, 2) + 2;
+        const width = 420, height = 320;
+        const sx = (x) => ((x - minX) / (maxX - minX || 1)) * width;
+        const sy = (y) => height - ((y - minY) / (maxY - minY || 1)) * height;
+        const lineStart = add(A, mul(-1.5, v)), lineEnd = add(A, mul(1.5, v));
+
+        return React.createElement("div", { className: "diagramCard" },
+            React.createElement("div", { className: "cardTitle" }, "▣ Shared geometric picture"),
+            React.createElement("svg", { viewBox: `0 0 ${width} ${height}`, className: "diagramSvg" },
+                React.createElement("defs", null,
+                    React.createElement("marker", { id: `arrow-purple-${mode}`, viewBox: "0 0 10 10", refX: "8", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto-start-reverse" },
+                        React.createElement("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: "#7c3aed" })),
+                    React.createElement("marker", { id: `arrow-blue-${mode}`, viewBox: "0 0 10 10", refX: "8", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto-start-reverse" },
+                        React.createElement("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: "#2563eb" })),
+                    React.createElement("marker", { id: `arrow-green-${mode}`, viewBox: "0 0 10 10", refX: "8", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto-start-reverse" },
+                        React.createElement("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: "#059669" }))
+                ),
+                React.createElement("line", { x1: sx(lineStart[0]), y1: sy(lineStart[1]), x2: sx(lineEnd[0]), y2: sy(lineEnd[1]), stroke: "#334155", strokeWidth: "3" }),
+                mode === "cross" && React.createElement("polygon", { points: `${sx(A[0])},${sy(A[1])} ${sx(B[0])},${sy(B[1])} ${sx(C[0])},${sy(C[1])} ${sx(P[0])},${sy(P[1])}`, fill: "rgba(148, 163, 184, 0.35)", stroke: "#94a3b8", strokeWidth: "2" }),
+                React.createElement("line", { x1: sx(A[0]), y1: sy(A[1]), x2: sx(B[0]), y2: sy(B[1]), stroke: "#7c3aed", strokeWidth: "4", markerEnd: `url(#arrow-purple-${mode})` }),
+                React.createElement("line", { x1: sx(A[0]), y1: sy(A[1]), x2: sx(P[0]), y2: sy(P[1]), stroke: "#2563eb", strokeWidth: "3", strokeDasharray: "6 5", markerEnd: `url(#arrow-blue-${mode})` }),
+                (mode === "projection" || mode === "nearest") && React.createElement("line", { x1: sx(A[0]), y1: sy(A[1]), x2: sx(foot[0]), y2: sy(foot[1]), stroke: "#059669", strokeWidth: "4", markerEnd: `url(#arrow-green-${mode})` }),
+                React.createElement("line", { x1: sx(foot[0]), y1: sy(foot[1]), x2: sx(P[0]), y2: sy(P[1]), stroke: "#0f172a", strokeWidth: "4" }),
+                React.createElement("circle", { cx: sx(A[0]), cy: sy(A[1]), r: "6", fill: "#0f172a" }),
+                React.createElement("circle", { cx: sx(P[0]), cy: sy(P[1]), r: "6", fill: "#0f172a" }),
+                React.createElement("circle", { cx: sx(foot[0]), cy: sy(foot[1]), r: "5", fill: "white", stroke: "#0f172a", strokeWidth: "2" }),
+                React.createElement("text", { x: sx(A[0]) + 8, y: sy(A[1]) - 8, fill: "#0f172a", fontSize: "14", fontWeight: "700" }, "A"),
+                React.createElement("text", { x: sx(P[0]) + 8, y: sy(P[1]) - 8, fill: "#0f172a", fontSize: "14", fontWeight: "700" }, "P"),
+                React.createElement("text", { x: sx(B[0]) + 6, y: sy(B[1]) - 6, fill: "#7c3aed", fontSize: "12", fontWeight: "700" }, "v"),
+                (mode === "projection" || mode === "nearest") && React.createElement("text", { x: sx(foot[0]) + 8, y: sy(foot[1]) - 8, fill: "#059669", fontSize: "12", fontWeight: "700" }, mode === "nearest" ? "N" : "projection"),
+                mode === "cross" ? React.createElement(React.Fragment, null, React.createElement("text", { x: "16", y: "28", fill: "#475569", fontSize: "12" }, "Parallelogram area = |AP × v|"), React.createElement("text", { x: "16", y: "48", fill: "#475569", fontSize: "12" }, "distance = height = area ÷ |v|")) : (mode === "projection" ? React.createElement(React.Fragment, null, React.createElement("text", { x: "16", y: "28", fill: "#475569", fontSize: "12" }, "AP = projection + perpendicular component"), React.createElement("text", { x: "16", y: "48", fill: "#475569", fontSize: "12" }, "distance = |perpendicular component|")) : React.createElement(React.Fragment, null, React.createElement("text", { x: "16", y: "28", fill: "#475569", fontSize: "12" }, "Choose N on the line so PN ⟂ v"), React.createElement("text", { x: "16", y: "48", fill: "#475569", fontSize: "12" }, "therefore PN · v = 0")))
+            ),
+            React.createElement(Legend, null),
+            React.createElement("p", { className: "caption" }, "This is a clean projection of the relevant 3D geometry into the plane containing the point and the line.")
+        );
+    };
+
+    const TabButton = ({ active, onClick, children }) => React.createElement("button", { className: active ? "tab active" : "tab", onClick: onClick }, children);
+    const WorkingToggle = ({ showWorking, setShowWorking }) => React.createElement("div", { className: "rowBetween workingHeader" }, React.createElement("h3", null, "Concise working"), React.createElement("button", { className: "outlineButton small", onClick: () => setShowWorking(!showWorking) }, showWorking ? "Hide" : "Show", " working"));
+
+    const App = () => {
+        const [P, setP] = React.useState([4, 5, 3]);
+        const [A, setA] = React.useState([1, 2, -1]);
+        const [v, setV] = React.useState([3, -2, 4]);
+        const [form, setForm] = React.useState("vector");
+        const [method, setMethod] = React.useState("cross");
+        const [bottomTab, setBottomTab] = React.useState("challenge");
+        const [showWorking, setShowWorking] = React.useState(true);
+        const [showChallengeAnswer, setShowChallengeAnswer] = React.useState(false);
+
+        const data = React.useMemo(() => {
+            const AP = sub(P, A);
+            const APcrossV = cross(AP, v);
+            const areaSquared = dot(APcrossV, APcrossV);
+            const vSquared = dot(v, v);
+            const area = mag(APcrossV);
+            const vMag = mag(v);
+            const crossDistance = vMag === 0 ? NaN : area / vMag;
+            const u = vMag === 0 ? [0,0,0] : mul(1/vMag, v);
+            const projLength = dot(AP, u);
+            const projVec = mul(projLength, u);
+            const perpVec = sub(AP, projVec);
+            const projectionDistance = mag(perpVec);
+            const APSquared = dot(AP, AP);
+            const projectionSquared = projLength * projLength;
+            const distanceSquared = projectionDistance * projectionDistance;
+            const exactDistance = exactDistanceText(areaSquared, vSquared);
+            const lambdaN = vSquared === 0 ? NaN : dot(AP, v)/vSquared;
+            const N = add(A, mul(Number.isFinite(lambdaN) ? lambdaN : 0, v));
+            const PN = sub(N, P);
+            const PNdotV = dot(PN, v);
+            const nearestDistance = mag(PN);
+            return { AP, APcrossV, areaSquared, vSquared, area, vMag, crossDistance, u, projLength, projVec, perpVec, projectionDistance, APSquared, projectionSquared, distanceSquared, exactDistance, lambdaN, N, PN, PNdotV, nearestDistance };
+        }, [P,A,v]);
+
+        const directionInvalid = mag(v) === 0;
+        const reset = () => { setP([4,5,3]); setA([1,2,-1]); setV([3,-2,4]); setForm("vector"); setMethod("cross"); setBottomTab("challenge"); setShowWorking(true); setShowChallengeAnswer(false); };
+
+        return React.createElement("main", { className: "page" },
+            React.createElement("section", { className: "hero" },
+                React.createElement("div", null, React.createElement("span", { className: "badge" }, "Specialist Mathematics"), React.createElement("h1", null, "Distance from a Point to a Line in 3D"), React.createElement("p", null, "Compare three methods: cross-product area, projection with Pythagoras, and nearest-point perpendicularity.")),
+                React.createElement("button", { className: "outlineButton", onClick: reset }, "↺ Reset example")
+            ),
+            React.createElement("section", { className: "mainGrid" },
+                React.createElement("aside", { className: "card inputsCard" },
+                    React.createElement("h2", null, "Inputs"),
+                    React.createElement("p", { className: "muted" }, "All methods use the same point, line point, and direction vector."),
+                    React.createElement(NumberTriple, { label: "External point P", values: P, onChange: setP }),
+                    React.createElement(NumberTriple, { label: "Point A on the line", values: A, onChange: setA }),
+                    React.createElement(NumberTriple, { label: "Direction vector v", values: v, onChange: setV }),
+                    directionInvalid && React.createElement("p", { className: "error" }, "The direction vector cannot be the zero vector."),
+                    React.createElement("div", { className: "representationBox" },
+                        React.createElement("h3", null, "Line representation"),
+                        React.createElement("div", { className: "buttonRow" },
+                            React.createElement("button", { className: form === "vector" ? "pill activePill" : "pill", onClick: () => setForm("vector") }, "Vector"),
+                            React.createElement("button", { className: form === "cartesian" ? "pill activePill" : "pill", onClick: () => setForm("cartesian") }, "Cartesian")
+                        ),
+                        React.createElement("div", { className: "formulaBox" }, form === "vector" ? `r = ${vecText(A)} + λ${vecText(v)}` : fractionLine(A, v)),
+                        React.createElement("p", { className: "tiny" }, "Zero direction components are shown as fixed coordinates.")
+                    )
+                ),
+                React.createElement("section", { className: "card methodCard" },
+                    React.createElement("div", { className: "tabs three" },
+                        React.createElement(TabButton, { active: method === "cross", onClick: () => setMethod("cross") }, "Method 1: Cross product"),
+                        React.createElement(TabButton, { active: method === "projection", onClick: () => setMethod("projection") }, "Method 2: Projection"),
+                        React.createElement(TabButton, { active: method === "nearest", onClick: () => setMethod("nearest") }, "Method 3: Nearest point")
+                    ),
+                    React.createElement("div", { className: "methodGrid" },
+                        React.createElement(ProjectionDiagram, { A, P, v, mode: method }),
+                        React.createElement("div", { className: "workingCard" },
+                            method === "cross" && React.createElement(React.Fragment, null,
+                                React.createElement("h2", null, "Cross-product area method"),
+                                React.createElement("p", { className: "muted" }, "Interpret distance as the height of a parallelogram."),
+                                React.createElement(WorkingToggle, { showWorking, setShowWorking }),
+                                showWorking ? React.createElement("div", { className: "working" },
+                                    React.createElement("p", null, "AP = P − A = ", vecText(data.AP)),
+                                    React.createElement("p", null, "AP × v = ", vecText(data.APcrossV)),
+                                    React.createElement("p", null, "|AP × v| = √", fmt(data.areaSquared), " = ", fmt(data.area)),
+                                    React.createElement("p", null, "|v| = √", fmt(data.vSquared), " = ", fmt(data.vMag)),
+                                    React.createElement("p", null, "Exact form: d = ", directionInvalid ? "undefined" : data.exactDistance),
+                                    React.createElement("p", { className: "answer" }, "Decimal: d = ", directionInvalid ? "undefined" : fmt(data.crossDistance))
+                                ) : React.createElement("p", { className: "muted" }, "Working hidden."),
+                                React.createElement("p", { className: "note" }, "The purple direction vector gives the base of the parallelogram. The cross product gives area. Dividing by the base length gives the height.")
+                            ),
+                            method === "projection" && React.createElement(React.Fragment, null,
+                                React.createElement("h2", null, "Projection and Pythagoras method"),
+                                React.createElement("p", { className: "muted" }, "Decompose AP into parallel and perpendicular components."),
+                                React.createElement(WorkingToggle, { showWorking, setShowWorking }),
+                                showWorking ? React.createElement("div", { className: "working" },
+                                    React.createElement("p", null, "AP = P − A = ", vecText(data.AP)),
+                                    React.createElement("p", null, "u = v / |v| = ", vecText(data.u)),
+                                    React.createElement("p", null, "Projection length = AP · u = ", fmt(data.projLength)),
+                                    React.createElement("p", null, "Projection vector = (AP · u)u = ", vecText(data.projVec)),
+                                    React.createElement("p", null, "Perpendicular component = AP − projection = ", vecText(data.perpVec)),
+                                    React.createElement("p", null, "Pythagoras: |AP|² = projection² + distance²"),
+                                    React.createElement("p", null, fmt(data.APSquared), " = ", fmt(data.projectionSquared), " + ", fmt(data.distanceSquared)),
+                                    React.createElement("p", { className: "answer" }, "Distance = ", directionInvalid ? "undefined" : fmt(data.projectionDistance))
+                                ) : React.createElement("p", { className: "muted" }, "Working hidden."),
+                                React.createElement("p", { className: "note" }, "The green vector is the projection of AP along the line. The remaining black segment is perpendicular to the line.")
+                            ),
+                            method === "nearest" && React.createElement(React.Fragment, null,
+                                React.createElement("h2", null, "Nearest point method"),
+                                React.createElement("p", { className: "muted" }, "Let N be a general point on the line, then require PN to be perpendicular to the direction vector."),
+                                React.createElement(WorkingToggle, { showWorking, setShowWorking }),
+                                showWorking ? React.createElement("div", { className: "working" },
+                                    React.createElement("p", null, "N = A + λv"),
+                                    React.createElement("p", null, "N = ", vecText(A), " + λ", vecText(v)),
+                                    React.createElement("p", null, "PN = N − P"),
+                                    React.createElement("p", null, "Require PN · v = 0"),
+                                    React.createElement("p", null, "λ = AP · v / |v|² = ", directionInvalid ? "undefined" : fmt(data.lambdaN)),
+                                    React.createElement("p", null, "N = ", directionInvalid ? "undefined" : vecText(data.N)),
+                                    React.createElement("p", null, "PN = ", directionInvalid ? "undefined" : vecText(data.PN)),
+                                    React.createElement("p", null, "Check: PN · v = ", directionInvalid ? "undefined" : fmt(data.PNdotV)),
+                                    React.createElement("p", { className: "answer" }, "Distance = |PN| = ", directionInvalid ? "undefined" : fmt(data.nearestDistance))
+                                ) : React.createElement("p", { className: "muted" }, "Working hidden."),
+                                React.createElement("p", { className: "note" }, "The green point N is chosen on the line so that PN is perpendicular to the line direction.")
+                            )
+                        )
+                    )
+                )
+            ),
+            React.createElement("section", { className: "card lowerCard" },
+                React.createElement("div", { className: "tabs three" },
+                    React.createElement(TabButton, { active: bottomTab === "challenge", onClick: () => setBottomTab("challenge") }, "Student challenge"),
+                    React.createElement(TabButton, { active: bottomTab === "guide", onClick: () => setBottomTab("guide") }, "Teacher guide"),
+                    React.createElement(TabButton, { active: bottomTab === "voiceover", onClick: () => setBottomTab("voiceover") }, "Voice-over draft")
+                ),
+                bottomTab === "challenge" && React.createElement("div", { className: "tabContent" },
+                    React.createElement("div", { className: "rowBetween" }, React.createElement("h2", null, "Student challenge"), React.createElement("button", { className: "outlineButton small", onClick: () => setShowChallengeAnswer(!showChallengeAnswer) }, showChallengeAnswer ? "Hide" : "Reveal")),
+                    React.createElement("p", null, "Using the same diagram, explain why all three methods must produce the same distance."),
+                    showChallengeAnswer && React.createElement("p", { className: "note" }, "All three methods isolate the same perpendicular segment. The cross-product method finds it as parallelogram height. The projection method finds it as the leftover perpendicular component after subtracting the parallel part of AP. The nearest-point method finds the point N on the line where PN is perpendicular to the direction vector.")
+                ),
+                bottomTab === "guide" && React.createElement("div", { className: "tabContent" },
+                    React.createElement("h2", null, "Short teacher guide"),
+                    React.createElement("p", null, "Start with the shared ingredients: an external point P, a point A on the line, and a direction vector v."),
+                    React.createElement("p", null, "In Method 1, AP and v form a parallelogram. The cross product gives its area, and dividing by |v| gives the perpendicular height."),
+                    React.createElement("p", null, "In Method 2, first form the unit vector u in the direction of v. The scalar AP · u gives the signed length of the projection of AP along the line. The remaining component is perpendicular to the line, and its magnitude is the distance."),
+                    React.createElement("p", null, "In Method 3, define a general point N on the line using N = A + λv. Since the nearest point occurs where PN is perpendicular to the line, impose PN · v = 0, solve for λ, then calculate |PN|."),
+                    React.createElement("p", { className: "note" }, "Sharing note: once deployed to Vercel, students can access this as a normal webpage link.")
+                ),
+                bottomTab === "voiceover" && React.createElement("div", { className: "tabContent" },
+                    React.createElement("h2", null, "Suggested voice-over draft"),
+                    React.createElement("p", null, "“All three methods start with the same vector AP and the same direction vector v. The blue vector AP connects the line to the point, while the purple vector shows the direction of the line.”"),
+                    React.createElement("p", null, "“In the cross-product method, these two vectors form a parallelogram. The magnitude of the cross product gives its area, and dividing by the base length gives the perpendicular height.”"),
+                    React.createElement("p", null, "“In the projection method, we turn the direction vector into a unit vector, then project AP onto it. This gives the part of AP running along the line. The leftover component is perpendicular, and its magnitude is the required distance.”"),
+                    React.createElement("p", null, "“The third method names the nearest point on the line as N. Since PN must meet the line at right angles, PN dotted with the direction vector must equal zero. Solving that condition locates N, and the length of PN is the distance.”")
+                )
+            )
+        );
+    };
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>
