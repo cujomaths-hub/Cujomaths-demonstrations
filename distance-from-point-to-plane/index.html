@@ -167,6 +167,7 @@
         .swatch.purple { background: #7c3aed; }
         .swatch.black { background: #0f172a; }
         .swatch.green { background: #059669; }
+        .swatch.blue { background: #2563eb; }
         .caption { font-size: 0.7rem; color: #475569; margin-top: 8px; text-align: center; }
         .lowerCard { margin-top: 16px; }
         .tabContent { padding: 20px 0 8px; }
@@ -250,9 +251,10 @@
         React.createElement("h3", null, "Concise working"),
         React.createElement("button", { className: "outlineButton small", onClick: () => setShowWorking(!showWorking) }, showWorking ? "Hide" : "Show", " working")
     );
-    const Legend = () => React.createElement("div", { className: "legend" },
+    const Legend = ({ method }) => React.createElement("div", { className: "legend" },
         React.createElement("div", null, React.createElement("span", { className: "swatch plane" }), "plane"),
         React.createElement("div", null, React.createElement("span", { className: "swatch purple" }), "normal vector n"),
+        method === "projection" && React.createElement("div", null, React.createElement("span", { className: "swatch blue" }), "AP"),
         React.createElement("div", null, React.createElement("span", { className: "swatch orange" }), "point P"),
         React.createElement("div", null, React.createElement("span", { className: "swatch black" }), "perpendicular distance PQ"),
         React.createElement("div", null, React.createElement("span", { className: "swatch green" }), "foot Q")
@@ -275,7 +277,7 @@
         const scale = Math.min(width/(maxX-minX || 1), height/(maxY-minY || 1));
         const cx = -minX*scale + 10, cy = maxY*scale + 10;
         const proj = p => project(p, rotX, rotY, scale, cx, cy);
-        const cp = corners.map(proj), pP = proj(P), pQ = footQ ? proj(footQ) : null, pN = proj(normalEnd), pN0 = footQ ? proj(footQ) : proj(A0);
+        const cp = corners.map(proj), pP = proj(P), pQ = footQ ? proj(footQ) : null, pA0 = proj(A0), pN = proj(normalEnd), pN0 = footQ ? proj(footQ) : proj(A0);
         const origin = proj([0,0,0]), xEnd = proj([4,0,0]), yEnd = proj([0,4,0]), zEnd = proj([0,0,4]);
         const gridLines = [];
         for (let s=-size; s<=size+1e-9; s+=size/3) {
@@ -296,8 +298,14 @@
                 React.createElement("text", { x: zEnd.x+6, y: zEnd.y-6, fill: "#2563eb", fontSize: "12", fontWeight: "700" }, "z"),
                 React.createElement("polygon", { points: cp.map(p => `${p.x},${p.y}`).join(" "), fill: "rgba(191, 219, 254, 0.55)", stroke: "#2563eb", strokeWidth: "2" }),
                 gridLines.map((line, i) => { const A = proj(line[0]), B = proj(line[1]); return React.createElement("line", { key: i, x1: A.x, y1: A.y, x2: B.x, y2: B.y, stroke: "#60a5fa", strokeWidth: "0.8", opacity: "0.55" }); }),
+                method === "projection" && React.createElement("line", { x1: pA0.x, y1: pA0.y, x2: pP.x, y2: pP.y, stroke: "#2563eb", strokeWidth: "3", strokeDasharray: "7 5", markerEnd: `url(#arrow-blue-${method})` }),
                 pQ && React.createElement("line", { x1: pP.x, y1: pP.y, x2: pQ.x, y2: pQ.y, stroke: "#0f172a", strokeWidth: "4" }),
                 React.createElement("line", { x1: pN0.x, y1: pN0.y, x2: pN.x, y2: pN.y, stroke: "#7c3aed", strokeWidth: "4", markerEnd: `url(#arrow-purple-${method})` }),
+                method === "projection" && React.createElement(React.Fragment, null,
+                    React.createElement("circle", { cx: pA0.x, cy: pA0.y, r: "5", fill: "white", stroke: "#2563eb", strokeWidth: "2" }),
+                    React.createElement("text", { x: pA0.x+8, y: pA0.y+16, fill: "#2563eb", fontSize: "13", fontWeight: "700" }, "A"),
+                    React.createElement("text", { x: (pA0.x+pP.x)/2+6, y: (pA0.y+pP.y)/2-6, fill: "#2563eb", fontSize: "12", fontWeight: "700" }, "AP")
+                ),
                 React.createElement("circle", { cx: pP.x, cy: pP.y, r: "6", fill: "#f97316" }),
                 React.createElement("text", { x: pP.x+8, y: pP.y-8, fill: "#f97316", fontSize: "14", fontWeight: "700" }, "P"),
                 pQ && React.createElement(React.Fragment, null,
@@ -309,11 +317,11 @@
                     React.createElement("text", { x: "16", y: "28", fill: "#475569", fontSize: "12" }, "Distance formula uses signed substitution into the plane equation."),
                     React.createElement("text", { x: "16", y: "48", fill: "#475569", fontSize: "12" }, "Divide by the normal vector length to convert to perpendicular distance.")
                 ) : React.createElement(React.Fragment, null,
-                    React.createElement("text", { x: "16", y: "28", fill: "#475569", fontSize: "12" }, "Project AP onto the plane normal n."),
-                    React.createElement("text", { x: "16", y: "48", fill: "#475569", fontSize: "12" }, "The magnitude of that projection is the perpendicular distance.")
+                    React.createElement("text", { x: "16", y: "28", fill: "#475569", fontSize: "12" }, "Blue AP is projected onto the normal vector n."),
+                    React.createElement("text", { x: "16", y: "48", fill: "#475569", fontSize: "12" }, "That projected component is the perpendicular distance PQ.")
                 )
             ),
-            React.createElement(Legend, null),
+            React.createElement(Legend, { method }),
             React.createElement("p", { className: "caption" }, "The plane is drawn as a local patch. The black segment from P to Q is the shortest distance because it is parallel to the plane normal.")
         );
     };
@@ -440,7 +448,7 @@
                                     React.createElement("p", null, "Q = P − projection = ", data.footQ ? vecText(data.footQ) : "undefined"),
                                     React.createElement("p", { className: "answer" }, "Distance = |projection| = ", isDegenerate ? "undefined" : fmt(data.distance))
                                 ) : React.createElement("p", { className: "muted" }, "Working hidden."),
-                                React.createElement("p", { className: "note" }, "The black segment is parallel to the normal vector, so it meets the plane at right angles. This makes Q the nearest point on the plane to P.")
+                                React.createElement("p", { className: "note" }, "The blue vector AP starts at a point A on the plane and ends at P. Projecting AP onto the normal vector isolates exactly the perpendicular component, shown by PQ. Its length is the distance from the point to the plane.")
                             )
                         )
                     )
