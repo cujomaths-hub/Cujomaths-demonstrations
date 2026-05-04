@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>3D Point-to-Plane Distance Demonstrator | Specialist Mathematics</title>
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f8fafc;
+            margin: 0;
+            padding: 24px 20px;
+            color: #0f172a;
+        }
+        .page { max-width: 1300px; margin: 0 auto; }
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 32px;
+            background: white;
+            padding: 24px 28px;
+            border-radius: 28px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .badge {
+            background: #eef2ff;
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+        .hero h1 { margin: 0 0 8px 0; font-size: 1.8rem; }
+        .hero p { margin: 0; color: #334155; }
+        .mainGrid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 28px;
+            margin-bottom: 32px;
+        }
+        @media (max-width: 900px) { .mainGrid { grid-template-columns: 1fr; } }
+        .card {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #e2e8f0;
+            padding: 20px 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+        .inputsCard { align-self: start; }
+        .methodCard { padding: 0; overflow: hidden; }
+        .tabs { display: flex; border-bottom: 1px solid #e2e8f0; background: #fefefe; }
+        .tabs.three button { flex: 1; }
+        .tabs.two button { flex: 1; }
+        .tab {
+            background: transparent;
+            border: none;
+            padding: 14px 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .tab.active { color: #0f172a; border-bottom: 2px solid #3b82f6; background: #fafcff; }
+        .methodGrid { display: flex; flex-direction: column; gap: 24px; padding: 20px 24px 24px 24px; }
+        .inputGroup { margin-bottom: 20px; }
+        .inputGroup label, .controlGroup label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+        .triple, .quad { display: flex; gap: 12px; }
+        .triple input, .quad input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            font-family: monospace;
+            background: #ffffff;
+            color: #0f172a;
+        }
+        .quad input { min-width: 0; }
+        .controlGroup { margin-bottom: 20px; }
+        input[type="range"] { width: 100%; accent-color: #2563eb; }
+        .error {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 12px;
+        }
+        .representationBox {
+            background: #f1f5f9;
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin: 16px 0 8px;
+        }
+        .buttonRow { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+        .pill {
+            background: #e2e8f0;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .activePill { background: #0f172a; color: white; }
+        .formulaBox {
+            font-family: monospace;
+            background: white;
+            padding: 12px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            margin: 8px 0 4px;
+            overflow-x: auto;
+        }
+        .workingCard h2 { font-size: 1.3rem; margin: 0 0 8px 0; }
+        .muted { color: #475569; font-size: 0.85rem; }
+        .rowBetween { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .workingHeader { margin: 16px 0 12px; }
+        .outlineButton {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .outlineButton.small { font-size: 0.75rem; padding: 4px 12px; }
+        .working {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 12px 16px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin: 12px 0;
+            overflow-x: auto;
+        }
+        .answer {
+            font-weight: 700;
+            background: #e6f0ff;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .note { font-size: 0.8rem; background: #fef9e3; padding: 10px 14px; border-radius: 20px; margin-top: 14px; }
+        .diagramCard { background: #fefefe; border: 1px solid #e2e8f0; border-radius: 24px; padding: 12px; }
+        .diagramSvg { width: 100%; height: auto; background: #ffffff; border-radius: 16px; margin: 8px 0; }
+        .legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 8px; font-size: 0.75rem; }
+        .swatch { display: inline-block; width: 16px; height: 16px; border-radius: 20px; margin-right: 6px; vertical-align: middle; }
+        .swatch.plane { background: #bfdbfe; border: 1px solid #2563eb; }
+        .swatch.orange { background: #f97316; }
+        .swatch.purple { background: #7c3aed; }
+        .swatch.black { background: #0f172a; }
+        .swatch.green { background: #059669; }
+        .caption { font-size: 0.7rem; color: #475569; margin-top: 8px; text-align: center; }
+        .lowerCard { margin-top: 16px; }
+        .tabContent { padding: 20px 0 8px; }
+        .tiny { font-size: 0.7rem; color: #5b6e8c; }
+        .summaryGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+        @media (max-width: 520px) { .summaryGrid { grid-template-columns: 1fr; } }
+        .summaryBox { background: #f1f5f9; border-radius: 18px; padding: 10px 12px; font-family: monospace; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+    function dot(u, v) { return u.reduce((sum, value, i) => sum + value * v[i], 0); }
+    function cross(u, v) { return [u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0]]; }
+    function mag(u) { return Math.sqrt(dot(u, u)); }
+    function sub(u, v) { return u.map((value, i) => value - v[i]); }
+    function add(u, v) { return u.map((value, i) => value + v[i]); }
+    function mul(k, u) { return u.map(value => k * value); }
+    function fmt(n, dp = 3) { if (!Number.isFinite(n)) return "undefined"; if (Math.abs(n) < 1e-10) return "0"; if (Number.isInteger(n)) return String(n); return Number(n.toFixed(dp)).toString(); }
+    function vecText(v) { return `(${v.map(x => fmt(x)).join(", ")})`; }
+    function planeText(a,b,c,d) {
+        const terms = [];
+        [[a,"x"],[b,"y"],[c,"z"]].forEach(([coef,label]) => {
+            if (coef === 0) return;
+            const sign = coef > 0 && terms.length ? " + " : coef < 0 ? " - " : "";
+            const absCoef = Math.abs(coef);
+            terms.push(`${sign}${absCoef === 1 ? "" : fmt(absCoef)}${label}`);
+        });
+        if (d !== 0 || terms.length === 0) terms.push(`${d > 0 && terms.length ? " + " : d < 0 ? " - " : ""}${fmt(Math.abs(d))}`);
+        return `${terms.join("")} = 0`;
+    }
+    function normalise(v) { const m = mag(v); return m ? mul(1/m, v) : [0,0,0]; }
+    function pointOnPlane(a,b,c,d) {
+        if (Math.abs(a) > 1e-9) return [-d/a,0,0];
+        if (Math.abs(b) > 1e-9) return [0,-d/b,0];
+        if (Math.abs(c) > 1e-9) return [0,0,-d/c];
+        return [0,0,0];
+    }
+    function tangentBasis(n) {
+        const unit = normalise(n);
+        const seed = Math.abs(unit[0]) < 0.9 ? [1,0,0] : [0,1,0];
+        const u = normalise(cross(unit, seed));
+        const v = normalise(cross(unit, u));
+        return {u, v};
+    }
+    function rotate(point, rotX, rotY) {
+        const radX = rotX * Math.PI / 180, radY = rotY * Math.PI / 180;
+        let [x,y,z] = point;
+        let y1 = y*Math.cos(radX) - z*Math.sin(radX);
+        let z1 = y*Math.sin(radX) + z*Math.cos(radX);
+        let x2 = x*Math.cos(radY) + z1*Math.sin(radY);
+        let y2 = y1;
+        let z2 = -x*Math.sin(radY) + z1*Math.cos(radY);
+        return [x2,y2,z2];
+    }
+    function project(point, rotX, rotY, scale, cx, cy) {
+        const [x,y,z] = rotate(point, rotX, rotY);
+        return {x: cx + x*scale, y: cy - y*scale, zDepth: z};
+    }
+
+    const NumberTriple = ({ label, values, onChange, prefixes=["x","y","z"] }) => React.createElement("div", { className: "inputGroup" },
+        React.createElement("label", null, label),
+        React.createElement("div", { className: "triple" },
+            values.map((value, idx) => React.createElement("input", {
+                key: idx, type: "number", step: "any", value,
+                title: prefixes[idx],
+                onChange: e => { const next = [...values]; next[idx] = Number(e.target.value); onChange(next); }
+            }))
+        )
+    );
+    const NumberQuad = ({ label, values, onChange }) => React.createElement("div", { className: "inputGroup" },
+        React.createElement("label", null, label),
+        React.createElement("div", { className: "quad" }, values.map((value, idx) => React.createElement("input", {
+            key: idx, type: "number", step: "any", value,
+            title: ["a","b","c","d"][idx],
+            onChange: e => { const next = [...values]; next[idx] = Number(e.target.value); onChange(next); }
+        })))
+    );
+    const TabButton = ({ active, onClick, children }) => React.createElement("button", { className: active ? "tab active" : "tab", onClick }, children);
+    const WorkingToggle = ({ showWorking, setShowWorking }) => React.createElement("div", { className: "rowBetween workingHeader" },
+        React.createElement("h3", null, "Concise working"),
+        React.createElement("button", { className: "outlineButton small", onClick: () => setShowWorking(!showWorking) }, showWorking ? "Hide" : "Show", " working")
+    );
+    const Legend = () => React.createElement("div", { className: "legend" },
+        React.createElement("div", null, React.createElement("span", { className: "swatch plane" }), "plane"),
+        React.createElement("div", null, React.createElement("span", { className: "swatch purple" }), "normal vector n"),
+        React.createElement("div", null, React.createElement("span", { className: "swatch orange" }), "point P"),
+        React.createElement("div", null, React.createElement("span", { className: "swatch black" }), "perpendicular distance PQ"),
+        React.createElement("div", null, React.createElement("span", { className: "swatch green" }), "foot Q")
+    );
+
+    const PlaneDiagram = ({ P, planeCoeffs, footQ, rotX, rotY, method }) => {
+        const [a,b,c,d] = planeCoeffs;
+        const n = [a,b,c];
+        const A0 = pointOnPlane(a,b,c,d);
+        const {u, v} = tangentBasis(n);
+        const size = 3.6;
+        const corners = [add(add(A0, mul(-size,u)), mul(-size,v)), add(add(A0, mul(size,u)), mul(-size,v)), add(add(A0, mul(size,u)), mul(size,v)), add(add(A0, mul(-size,u)), mul(size,v))];
+        const normalEnd = footQ ? add(footQ, mul(1.4, normalise(n))) : add(A0, mul(1.4, normalise(n)));
+        const points = [...corners, P, footQ || A0, normalEnd, [0,0,0], [4,0,0], [0,4,0], [0,0,4]];
+        const rotated = points.map(p => rotate(p, rotX, rotY));
+        const xs = rotated.map(p => p[0]), ys = rotated.map(p => p[1]);
+        const minX = Math.min(...xs) - 1.5, maxX = Math.max(...xs) + 1.5;
+        const minY = Math.min(...ys) - 1.5, maxY = Math.max(...ys) + 1.5;
+        const width = 680, height = 390;
+        const scale = Math.min(width/(maxX-minX || 1), height/(maxY-minY || 1));
+        const cx = -minX*scale + 10, cy = maxY*scale + 10;
+        const proj = p => project(p, rotX, rotY, scale, cx, cy);
+        const cp = corners.map(proj), pP = proj(P), pQ = footQ ? proj(footQ) : null, pN = proj(normalEnd), pN0 = footQ ? proj(footQ) : proj(A0);
+        const origin = proj([0,0,0]), xEnd = proj([4,0,0]), yEnd = proj([0,4,0]), zEnd = proj([0,0,4]);
+        const gridLines = [];
+        for (let s=-size; s<=size+1e-9; s+=size/3) {
+            gridLines.push([add(add(A0, mul(-size,u)), mul(s,v)), add(add(A0, mul(size,u)), mul(s,v))]);
+            gridLines.push([add(add(A0, mul(s,u)), mul(-size,v)), add(add(A0, mul(s,u)), mul(size,v))]);
+        }
+        return React.createElement("div", { className: "diagramCard" },
+            React.createElement("div", { className: "cardTitle" }, "▣ Shared geometric picture"),
+            React.createElement("svg", { viewBox: `0 0 ${width+20} ${height+20}`, className: "diagramSvg" },
+                React.createElement("defs", null,
+                    ["red","green","blue","purple"].map(col => React.createElement("marker", { key: col, id: `arrow-${col}-${method}`, viewBox: "0 0 10 10", refX: "8", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto-start-reverse" }, React.createElement("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: {red:"#ef4444",green:"#059669",blue:"#2563eb",purple:"#7c3aed"}[col] })))
+                ),
+                React.createElement("line", { x1: origin.x, y1: origin.y, x2: xEnd.x, y2: xEnd.y, stroke: "#ef4444", strokeWidth: "2", markerEnd: `url(#arrow-red-${method})` }),
+                React.createElement("line", { x1: origin.x, y1: origin.y, x2: yEnd.x, y2: yEnd.y, stroke: "#059669", strokeWidth: "2", markerEnd: `url(#arrow-green-${method})` }),
+                React.createElement("line", { x1: origin.x, y1: origin.y, x2: zEnd.x, y2: zEnd.y, stroke: "#2563eb", strokeWidth: "2", markerEnd: `url(#arrow-blue-${method})` }),
+                React.createElement("text", { x: xEnd.x+6, y: xEnd.y-6, fill: "#ef4444", fontSize: "12", fontWeight: "700" }, "x"),
+                React.createElement("text", { x: yEnd.x+6, y: yEnd.y-6, fill: "#059669", fontSize: "12", fontWeight: "700" }, "y"),
+                React.createElement("text", { x: zEnd.x+6, y: zEnd.y-6, fill: "#2563eb", fontSize: "12", fontWeight: "700" }, "z"),
+                React.createElement("polygon", { points: cp.map(p => `${p.x},${p.y}`).join(" "), fill: "rgba(191, 219, 254, 0.55)", stroke: "#2563eb", strokeWidth: "2" }),
+                gridLines.map((line, i) => { const A = proj(line[0]), B = proj(line[1]); return React.createElement("line", { key: i, x1: A.x, y1: A.y, x2: B.x, y2: B.y, stroke: "#60a5fa", strokeWidth: "0.8", opacity: "0.55" }); }),
+                pQ && React.createElement("line", { x1: pP.x, y1: pP.y, x2: pQ.x, y2: pQ.y, stroke: "#0f172a", strokeWidth: "4" }),
+                React.createElement("line", { x1: pN0.x, y1: pN0.y, x2: pN.x, y2: pN.y, stroke: "#7c3aed", strokeWidth: "4", markerEnd: `url(#arrow-purple-${method})` }),
+                React.createElement("circle", { cx: pP.x, cy: pP.y, r: "6", fill: "#f97316" }),
+                React.createElement("text", { x: pP.x+8, y: pP.y-8, fill: "#f97316", fontSize: "14", fontWeight: "700" }, "P"),
+                pQ && React.createElement(React.Fragment, null,
+                    React.createElement("circle", { cx: pQ.x, cy: pQ.y, r: "6", fill: "white", stroke: "#059669", strokeWidth: "3" }),
+                    React.createElement("text", { x: pQ.x+8, y: pQ.y-8, fill: "#059669", fontSize: "14", fontWeight: "700" }, "Q")
+                ),
+                React.createElement("text", { x: pN.x+8, y: pN.y-8, fill: "#7c3aed", fontSize: "12", fontWeight: "700" }, "n"),
+                method === "formula" ? React.createElement(React.Fragment, null,
+                    React.createElement("text", { x: "16", y: "28", fill: "#475569", fontSize: "12" }, "Distance formula uses signed substitution into the plane equation."),
+                    React.createElement("text", { x: "16", y: "48", fill: "#475569", fontSize: "12" }, "Divide by the normal vector length to convert to perpendicular distance.")
+                ) : React.createElement(React.Fragment, null,
+                    React.createElement("text", { x: "16", y: "28", fill: "#475569", fontSize: "12" }, "Project AP onto the plane normal n."),
+                    React.createElement("text", { x: "16", y: "48", fill: "#475569", fontSize: "12" }, "The magnitude of that projection is the perpendicular distance.")
+                )
+            ),
+            React.createElement(Legend, null),
+            React.createElement("p", { className: "caption" }, "The plane is drawn as a local patch. The black segment from P to Q is the shortest distance because it is parallel to the plane normal.")
+        );
+    };
+
+    const App = () => {
+        const [mode, setMode] = React.useState("general");
+        const [coeffs, setCoeffs] = React.useState([1,1,1,-5]);
+        const [planePoint, setPlanePoint] = React.useState([0,0,5]);
+        const [normalVec, setNormalVec] = React.useState([1,1,1]);
+        const [ptA, setPtA] = React.useState([0,0,4]);
+        const [ptB, setPtB] = React.useState([4,0,4]);
+        const [ptC, setPtC] = React.useState([0,3,4]);
+        const [P, setP] = React.useState([2,3,8]);
+        const [rotX, setRotX] = React.useState(30);
+        const [rotY, setRotY] = React.useState(45);
+        const [method, setMethod] = React.useState("formula");
+        const [bottomTab, setBottomTab] = React.useState("challenge");
+        const [showWorking, setShowWorking] = React.useState(true);
+        const [showChallengeAnswer, setShowChallengeAnswer] = React.useState(false);
+
+        const data = React.useMemo(() => {
+            let planeCoeffs = coeffs;
+            if (mode === "pointNormal") {
+                const n = normalVec; planeCoeffs = [n[0], n[1], n[2], -dot(n, planePoint)];
+            } else if (mode === "threePoints") {
+                const AB = sub(ptB, ptA), AC = sub(ptC, ptA), n = cross(AB, AC);
+                planeCoeffs = [n[0], n[1], n[2], -dot(n, ptA)];
+            }
+            const [a,b,c,d] = planeCoeffs;
+            const n = [a,b,c];
+            const nSq = dot(n,n), nMag = Math.sqrt(nSq);
+            const signedNumerator = dot(n, P) + d;
+            const distance = nMag ? Math.abs(signedNumerator) / nMag : NaN;
+            const lambda = nSq ? signedNumerator / nSq : NaN;
+            const footQ = nSq ? sub(P, mul(lambda, n)) : null;
+            const A0 = pointOnPlane(a,b,c,d);
+            const AP = sub(P, A0);
+            const projFactor = nSq ? dot(AP, n)/nSq : NaN;
+            const projectionVec = nSq ? mul(projFactor, n) : [NaN,NaN,NaN];
+            return { planeCoeffs, n, nSq, nMag, signedNumerator, distance, lambda, footQ, A0, AP, projFactor, projectionVec };
+        }, [mode, coeffs, planePoint, normalVec, ptA, ptB, ptC, P]);
+        const [a,b,c,d] = data.planeCoeffs;
+        const isDegenerate = data.nSq < 1e-12;
+        const reset = () => { setMode("general"); setCoeffs([1,1,1,-5]); setPlanePoint([0,0,5]); setNormalVec([1,1,1]); setPtA([0,0,4]); setPtB([4,0,4]); setPtC([0,3,4]); setP([2,3,8]); setRotX(30); setRotY(45); setMethod("formula"); setShowWorking(true); setBottomTab("challenge"); setShowChallengeAnswer(false); };
+
+        return React.createElement("main", { className: "page" },
+            React.createElement("section", { className: "hero" },
+                React.createElement("div", null,
+                    React.createElement("span", { className: "badge" }, "Specialist Mathematics"),
+                    React.createElement("h1", null, "Distance from a Point to a Plane in 3D"),
+                    React.createElement("p", null, "Compare the distance formula with the vector projection method, using one shared geometric picture.")
+                ),
+                React.createElement("button", { className: "outlineButton", onClick: reset }, "↺ Reset example")
+            ),
+            React.createElement("section", { className: "mainGrid" },
+                React.createElement("aside", { className: "card inputsCard" },
+                    React.createElement("h2", null, "Inputs"),
+                    React.createElement("p", { className: "muted" }, "Define the plane, choose the external point, and rotate the 3D view."),
+                    React.createElement("div", { className: "controlGroup" },
+                        React.createElement("label", null, "Plane definition"),
+                        React.createElement("select", { value: mode, onChange: e => setMode(e.target.value) },
+                            React.createElement("option", { value: "general" }, "General form: ax + by + cz + d = 0"),
+                            React.createElement("option", { value: "pointNormal" }, "Point on plane + normal vector"),
+                            React.createElement("option", { value: "threePoints" }, "Three points on plane")
+                        )
+                    ),
+                    mode === "general" && React.createElement(NumberQuad, { label: "Plane coefficients a, b, c, d", values: coeffs, onChange: setCoeffs }),
+                    mode === "pointNormal" && React.createElement(React.Fragment, null,
+                        React.createElement(NumberTriple, { label: "Point A on the plane", values: planePoint, onChange: setPlanePoint }),
+                        React.createElement(NumberTriple, { label: "Normal vector n", values: normalVec, onChange: setNormalVec })
+                    ),
+                    mode === "threePoints" && React.createElement(React.Fragment, null,
+                        React.createElement(NumberTriple, { label: "Point A on the plane", values: ptA, onChange: setPtA }),
+                        React.createElement(NumberTriple, { label: "Point B on the plane", values: ptB, onChange: setPtB }),
+                        React.createElement(NumberTriple, { label: "Point C on the plane", values: ptC, onChange: setPtC })
+                    ),
+                    React.createElement(NumberTriple, { label: "External point P", values: P, onChange: setP }),
+                    isDegenerate && React.createElement("p", { className: "error" }, "The normal vector cannot be the zero vector, so this plane is not defined."),
+                    React.createElement("div", { className: "controlGroup" }, React.createElement("label", null, "3D view: rotate around X"), React.createElement("input", { type: "range", min: "-90", max: "90", value: rotX, onChange: e => setRotX(Number(e.target.value)) }), React.createElement("p", { className: "tiny" }, rotX, "°")),
+                    React.createElement("div", { className: "controlGroup" }, React.createElement("label", null, "3D view: rotate around Y"), React.createElement("input", { type: "range", min: "-90", max: "90", value: rotY, onChange: e => setRotY(Number(e.target.value)) }), React.createElement("p", { className: "tiny" }, rotY, "°")),
+                    React.createElement("div", { className: "representationBox" },
+                        React.createElement("h3", null, "Plane summary"),
+                        React.createElement("div", { className: "formulaBox" }, planeText(a,b,c,d)),
+                        React.createElement("div", { className: "summaryGrid" },
+                            React.createElement("div", { className: "summaryBox" }, "n = ", vecText(data.n)),
+                            React.createElement("div", { className: "summaryBox" }, "d = ", isDegenerate ? "undefined" : fmt(data.distance))
+                        ),
+                        React.createElement("p", { className: "tiny" }, data.footQ ? `Foot Q = ${vecText(data.footQ)}` : "Foot Q is undefined.")
+                    )
+                ),
+                React.createElement("section", { className: "card methodCard" },
+                    React.createElement("div", { className: "tabs two" },
+                        React.createElement(TabButton, { active: method === "formula", onClick: () => setMethod("formula") }, "Method 1: Formula"),
+                        React.createElement(TabButton, { active: method === "projection", onClick: () => setMethod("projection") }, "Method 2: Projection")
+                    ),
+                    React.createElement("div", { className: "methodGrid" },
+                        !isDegenerate && React.createElement(PlaneDiagram, { P, planeCoeffs: data.planeCoeffs, footQ: data.footQ, rotX, rotY, method }),
+                        isDegenerate && React.createElement("div", { className: "diagramCard" }, React.createElement("p", { className: "error" }, "Enter a non-zero normal vector to show the diagram.")),
+                        React.createElement("div", { className: "workingCard" },
+                            method === "formula" && React.createElement(React.Fragment, null,
+                                React.createElement("h2", null, "Distance formula method"),
+                                React.createElement("p", { className: "muted" }, "Substitute the point into the plane equation, then divide by the length of the normal vector."),
+                                React.createElement(WorkingToggle, { showWorking, setShowWorking }),
+                                showWorking ? React.createElement("div", { className: "working" },
+                                    React.createElement("p", null, "Plane: ", planeText(a,b,c,d)),
+                                    React.createElement("p", null, "Point P = ", vecText(P)),
+                                    React.createElement("p", null, "Normal n = ", vecText(data.n), ", |n| = √", fmt(data.nSq), " = ", fmt(data.nMag)),
+                                    React.createElement("p", null, "Signed substitution = aPx + bPy + cPz + d = ", fmt(data.signedNumerator)),
+                                    React.createElement("p", null, "Distance = |", fmt(data.signedNumerator), "| / √", fmt(data.nSq)),
+                                    React.createElement("p", { className: "answer" }, "Distance = ", isDegenerate ? "undefined" : fmt(data.distance))
+                                ) : React.createElement("p", { className: "muted" }, "Working hidden."),
+                                React.createElement("p", { className: "note" }, "The denominator rescales the signed substitution so it becomes a true perpendicular length rather than just an equation value.")
+                            ),
+                            method === "projection" && React.createElement(React.Fragment, null,
+                                React.createElement("h2", null, "Vector projection method"),
+                                React.createElement("p", { className: "muted" }, "Choose a point A on the plane and project AP onto the normal vector."),
+                                React.createElement(WorkingToggle, { showWorking, setShowWorking }),
+                                showWorking ? React.createElement("div", { className: "working" },
+                                    React.createElement("p", null, "Choose A = ", vecText(data.A0), " on the plane."),
+                                    React.createElement("p", null, "AP = P − A = ", vecText(data.AP)),
+                                    React.createElement("p", null, "n = ", vecText(data.n), ", n · n = ", fmt(data.nSq)),
+                                    React.createElement("p", null, "Projection factor = (AP · n)/(n · n) = ", isDegenerate ? "undefined" : fmt(data.projFactor)),
+                                    React.createElement("p", null, "Projection vector = ", isDegenerate ? "undefined" : vecText(data.projectionVec)),
+                                    React.createElement("p", null, "Q = P − projection = ", data.footQ ? vecText(data.footQ) : "undefined"),
+                                    React.createElement("p", { className: "answer" }, "Distance = |projection| = ", isDegenerate ? "undefined" : fmt(data.distance))
+                                ) : React.createElement("p", { className: "muted" }, "Working hidden."),
+                                React.createElement("p", { className: "note" }, "The black segment is parallel to the normal vector, so it meets the plane at right angles. This makes Q the nearest point on the plane to P.")
+                            )
+                        )
+                    )
+                )
+            ),
+            React.createElement("section", { className: "card lowerCard" },
+                React.createElement("div", { className: "tabs three" },
+                    React.createElement(TabButton, { active: bottomTab === "challenge", onClick: () => setBottomTab("challenge") }, "Student challenge"),
+                    React.createElement(TabButton, { active: bottomTab === "guide", onClick: () => setBottomTab("guide") }, "Teacher guide"),
+                    React.createElement(TabButton, { active: bottomTab === "voiceover", onClick: () => setBottomTab("voiceover") }, "Voice-over draft")
+                ),
+                bottomTab === "challenge" && React.createElement("div", { className: "tabContent" },
+                    React.createElement("div", { className: "rowBetween" }, React.createElement("h2", null, "Student challenge"), React.createElement("button", { className: "outlineButton small", onClick: () => setShowChallengeAnswer(!showChallengeAnswer) }, showChallengeAnswer ? "Hide" : "Reveal")),
+                    React.createElement("p", null, "Use the same diagram to explain why the formula method and projection method must give the same distance."),
+                    showChallengeAnswer && React.createElement("p", { className: "note" }, "Both methods measure the same perpendicular component in the direction of the normal vector. The formula finds its signed length directly from the plane equation. The projection method finds the same component by projecting AP onto n.")
+                ),
+                bottomTab === "guide" && React.createElement("div", { className: "tabContent" },
+                    React.createElement("h2", null, "Short teacher guide"),
+                    React.createElement("p", null, "Start by identifying the plane's normal vector. In general form, ax + by + cz + d = 0, the normal vector is n = (a, b, c)."),
+                    React.createElement("p", null, "In Method 1, substitute P into the left side of the plane equation. The absolute value gives a scaled signed distance, and dividing by |n| gives the true perpendicular distance."),
+                    React.createElement("p", null, "In Method 2, choose any point A on the plane and form AP. The component of AP in the direction of n is perpendicular to the plane, so its magnitude is the shortest distance."),
+                    React.createElement("p", { className: "note" }, "Sharing note: this is a standalone HTML file using React and Babel from CDN, matching the deployment style of the first applet.")
+                ),
+                bottomTab === "voiceover" && React.createElement("div", { className: "tabContent" },
+                    React.createElement("h2", null, "Suggested voice-over draft"),
+                    React.createElement("p", null, "“The shortest distance from a point to a plane is measured at right angles to the plane. That direction is given by the plane's normal vector.”"),
+                    React.createElement("p", null, "“In the formula method, we substitute the point into the plane equation. This tells us how far the point is from satisfying the equation, and dividing by the length of the normal vector converts that into a distance.”"),
+                    React.createElement("p", null, "“In the projection method, we choose a point on the plane, form AP, and project AP onto the normal vector. The length of that projection is the same perpendicular distance.”")
+                )
+            )
+        );
+    };
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>
