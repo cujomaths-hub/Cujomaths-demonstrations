@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Completing the Square Demonstrator | Mathematics</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f8fafc;
+      margin: 0;
+      padding: 24px 20px;
+      color: #0f172a;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 32px;
+      background: white;
+      padding: 24px 28px;
+      border-radius: 28px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+    }
+
+    .badge {
+      background: #eef2ff;
+      color: #1e40af;
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px 0;
+      font-size: 1.8rem;
+    }
+
+    .hero p {
+      margin: 0;
+      color: #334155;
+    }
+
+    .mainGrid {
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      gap: 28px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 900px) {
+      .mainGrid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: white;
+      border-radius: 24px;
+      border: 1px solid #e2e8f0;
+      padding: 20px 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    }
+
+    .inputsCard {
+      align-self: start;
+    }
+
+    .methodCard {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fefefe;
+    }
+
+    .tabs.two button,
+    .tabs.three button {
+      flex: 1;
+    }
+
+    .tab {
+      background: transparent;
+      border: none;
+      padding: 14px 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #475569;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+
+    .tab.active {
+      color: #0f172a;
+      border-bottom: 2px solid #3b82f6;
+      background: #fafcff;
+    }
+
+    .methodGrid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 20px 24px 24px 24px;
+    }
+
+    .inputGroup {
+      margin-bottom: 20px;
+    }
+
+    .inputGroup label,
+    .controlGroup label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: block;
+      margin-bottom: 8px;
+      color: #1e293b;
+    }
+
+    .pair {
+      display: flex;
+      gap: 12px;
+    }
+
+    .pair input,
+    select,
+    .studentInput {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      font-family: monospace;
+      background: #ffffff;
+      color: #0f172a;
+    }
+
+    .controlGroup {
+      margin-bottom: 20px;
+    }
+
+    .representationBox {
+      background: #f1f5f9;
+      border-radius: 20px;
+      padding: 12px 16px;
+      margin: 16px 0 8px;
+    }
+
+    .rowBetween {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .buttonRow {
+      display: flex;
+      gap: 8px;
+      margin: 12px 0;
+      flex-wrap: wrap;
+    }
+
+    .outlineButton {
+      background: transparent;
+      border: 1px solid #cbd5e1;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .primaryButton {
+      background: #0f172a;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 40px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .muted {
+      color: #475569;
+      font-size: 0.85rem;
+    }
+
+    .tiny {
+      font-size: 0.7rem;
+      color: #5b6e8c;
+    }
+
+    .expressionBox {
+      background: #e6f0ff;
+      border-radius: 20px;
+      padding: 18px;
+      text-align: center;
+      font-family: monospace;
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin: 16px 0;
+    }
+
+    .working {
+      background: #f8fafc;
+      border-radius: 20px;
+      padding: 12px 16px;
+      font-family: monospace;
+      font-size: 0.95rem;
+      margin: 12px 0;
+      overflow-x: auto;
+      line-height: 2;
+    }
+
+    .answer {
+      font-weight: 700;
+      background: #e6f0ff;
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .note {
+      font-size: 0.8rem;
+      background: #fef9e3;
+      padding: 10px 14px;
+      border-radius: 20px;
+      margin-top: 14px;
+    }
+
+    .stepCard {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .stepHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .stepHeader h3 {
+      margin: 0 0 6px 0;
+      font-size: 1rem;
+    }
+
+    .feedback {
+      font-size: 0.8rem;
+      margin-top: 8px;
+    }
+
+    .correct {
+      color: #047857;
+      font-weight: 600;
+    }
+
+    .incorrect {
+      color: #b91c1c;
+      font-weight: 600;
+    }
+
+    .tabContent {
+      padding: 20px 0 8px;
+    }
+
+    .summaryGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 520px) {
+      .summaryGrid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .summaryBox {
+      background: #f1f5f9;
+      border-radius: 18px;
+      padding: 10px 12px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    .choiceRow {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .choiceButton {
+      background: white;
+      border: 1px solid #cbd5e1;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-family: monospace;
+      cursor: pointer;
+    }
+
+    .choiceButton.selected {
+      background: #0f172a;
+      color: white;
+      border-color: #0f172a;
+    }
+
+    .equationInputRow {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .equalsPrefix {
+      font-family: monospace;
+      font-weight: 700;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .factorPreview {
+      font-family: monospace;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 10px 12px;
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+
+    /* Stacked fraction styling */
+    .frac {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: middle;
+      font-size: 0.9em;
+      margin: 0 0.15em;
+    }
+
+    .frac>span:first-child {
+      border-bottom: 1px solid currentColor;
+      padding-bottom: 1px;
+      line-height: 1;
+    }
+
+    .frac>span:last-child {
+      padding-top: 1px;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    // ----------------------------------------------------------------------
+    // 1. Utility functions – fractions and parsing
+    // ----------------------------------------------------------------------
+    function gcd(a, b) {
+      return b ? gcd(b, a % b) : a;
+    }
+
+    // Returns a string like "7/2" or "3", used for checks & placeholders
+    function toFractionString(n) {
+      if (!Number.isFinite(n)) return "undefined";
+      if (Math.abs(n) < 1e-10) return "0";
+      const tolerance = 1e-9;
+      for (let d of [1, 2, 4]) {
+        const num = Math.round(n * d);
+        if (Math.abs(num / d - n) < tolerance) {
+          const g = gcd(Math.abs(num), d);
+          const sn = num / g;
+          const sd = d / g;
+          if (sd === 1) return String(sn);
+          return `${sn}/${sd}`;
+        }
+      }
+      return Number(n.toFixed(3)).toString();
+    }
+
+    const fmt = toFractionString;
+
+    // Parse a string like "7/2" or "3" to a number
+    function parseFraction(str) {
+      str = String(str).trim();
+      const m = str.match(/^([+-]?\d+)(?:\/(\d+))?$/);
+      if (!m) return NaN;
+      const num = Number(m[1]);
+      const den = m[2] ? Number(m[2]) : 1;
+      return den === 0 ? NaN : num / den;
+    }
+
+    // Simplify √(value) for display: returns an object describing the simplest form
+    function simplifySqrt(value) {
+      const str = fmt(value); // e.g. "37/4"
+      const parts = str.split('/');
+      if (parts.length === 2) {
+        const num = parseInt(parts[0], 10);
+        const den = parseInt(parts[1], 10);
+        const sqrtDen = Math.sqrt(den);
+        if (Number.isInteger(sqrtDen)) {
+          // denominator is perfect square
+          return { numerator: `√${num}`, denominator: String(sqrtDen), isFraction: true };
+        }
+        // can't simplify nicely
+        return { radical: `√(${str})`, isFraction: false };
+      } else {
+        const n = Number(str);
+        const sqrtN = Math.sqrt(n);
+        if (Number.isInteger(sqrtN)) {
+          return { radical: String(sqrtN), isFraction: false };
+        }
+        return { radical: `√${str}`, isFraction: false };
+      }
+    }
+
+    // ----------------------------------------------------------------------
+    // 2. Expression helpers
+    // ----------------------------------------------------------------------
+    function signedTerm(value, variable = "") {
+      if (value === 0) return "";
+      const sign = value < 0 ? " − " : " + ";
+      const abs = Math.abs(value);
+      const coeff = variable && abs === 1 ? "" : fmt(abs);
+      return `${sign}${coeff}${variable}`;
+    }
+
+    function quadraticText(p, c) {
+      return `x²${signedTerm(Number(p), "x")}${signedTerm(Number(c))}`;
+    }
+
+    function bValue(p) {
+      return Math.abs(Number(p) / 2);
+    }
+
+    function squareTerm(p) {
+      const b = bValue(p);
+      return b * b;
+    }
+
+    function powerText(n) {
+      const f = fmt(n);
+      if (f.includes('/')) {
+        return `(${f})²`;
+      }
+      return `${f}²`;
+    }
+
+    function formText(p) {
+      return Number(p) >= 0 ? "a² + 2ab + b²" : "a² − 2ab + b²";
+    }
+
+    function middleRewriteWithConstant(p, c) {
+      const sign = Number(p) >= 0 ? "+" : "−";
+      return `x² ${sign} 2(x)(${fmt(bValue(p))})${signedTerm(Number(c))}`;
+    }
+
+    function addSubtractLine(p, c) {
+      const sign = Number(p) >= 0 ? "+" : "−";
+      const b = bValue(p);
+      return `x² ${sign} 2(x)(${fmt(b)}) + ${powerText(b)}${signedTerm(Number(c))} − ${powerText(b)}`;
+    }
+
+    function finalText(p, c) {
+      const sign = Number(p) >= 0 ? "+" : "−";
+      const outside = Number(c) - squareTerm(p);
+      return `(x ${sign} ${fmt(bValue(p))})²${signedTerm(outside)}`;
+    }
+
+    function canFactorFromTurningPoint(p, c) {
+      return Number(c) - squareTerm(p) < 0;
+    }
+
+    function radicandValue(p, c) {
+      return squareTerm(p) - Number(c);
+    }
+
+    // ----------------------------------------------------------------------
+    // 3. Acceptance checks (now parse fractions correctly)
+    // ----------------------------------------------------------------------
+    function normalise(input) {
+      return String(input)
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replaceAll("−", "-")
+        .replaceAll("^2", "²")
+        .replaceAll("*", "")
+        .replaceAll("·", "");
+    }
+
+    function acceptForm(input, p) {
+      const n = normalise(input);
+      return (
+        n === normalise(formText(p)) ||
+        (Number(p) >= 0 && (n.includes("+2ab") || n.includes("plus"))) ||
+        (Number(p) < 0 && (n.includes("-2ab") || n.includes("minus")))
+      );
+    }
+
+    function acceptBracketedMiddle(input, p, c) {
+      const b = fmt(bValue(p));
+      const sign = Number(p) >= 0 ? "+" : "-";
+      const cPart = Number(c) >= 0 ? `+${fmt(Number(c))}` : `-${fmt(Math.abs(Number(c)))}`;
+      return [
+        `x²${sign}2(x)(${b})${cPart}`,
+        `x^2${sign}2(x)(${b})${cPart}`,
+      ].map(normalise).includes(normalise(input));
+    }
+
+    function acceptFullLine(input, p, c) {
+      const b = fmt(bValue(p));
+      const bSquared = powerText(bValue(p));
+      const sign = Number(p) >= 0 ? "+" : "-";
+      const cPart = Number(c) >= 0 ? `+${fmt(Number(c))}` : `-${fmt(Math.abs(Number(c)))}`;
+      return [
+        `x²${sign}2(x)(${b})+${bSquared}${cPart}-${bSquared}`,
+        `x^2${sign}2(x)(${b})+${bSquared}${cPart}-${bSquared}`,
+      ].map(normalise).includes(normalise(input));
+    }
+
+    function acceptFinal(input, p, c) {
+      const b = fmt(bValue(p));
+      const sign = Number(p) >= 0 ? "+" : "-";
+      const outside = Number(c) - squareTerm(p);
+      const outsidePart = outside >= 0 ? `+${fmt(outside)}` : `-${fmt(Math.abs(outside))}`;
+      return [
+        `(x${sign}${b})²${outsidePart}`,
+        `(x${sign}${b})^2${outsidePart}`,
+      ].map(normalise).includes(normalise(input));
+    }
+
+    function acceptFactorisationDecision(input, p, c) {
+      const n = normalise(input);
+      const canFactor = canFactorFromTurningPoint(p, c);
+      if (canFactor) return n === "yes" || n.includes("can") || n.includes("factor");
+      return (
+        n === "no" ||
+        n.includes("not") ||
+        n.includes("doesnotfactor") ||
+        n.includes("willnotfactor") ||
+        n.includes("cannotfactor")
+      );
+    }
+
+    function acceptRadicand(input, p, c) {
+      if (!canFactorFromTurningPoint(p, c)) return true;
+      const val = parseFraction(input);
+      if (!Number.isFinite(val)) return false;
+      return Math.abs(val - radicandValue(p, c)) < 1e-9;
+    }
+
+    // ----------------------------------------------------------------------
+    // 4. React components for display
+    // ----------------------------------------------------------------------
+
+    // Fraction display component
+    const Frac = ({ num, den }) => {
+      if (den == 1 || !den) return React.createElement(React.Fragment, null, num);
+      const numStr = String(num);
+      const denStr = String(den);
+      return React.createElement(
+        'span',
+        { className: 'frac', style: { display: 'inline-flex', flexDirection: 'column', alignItems: 'center', verticalAlign: 'middle', fontSize: '0.9em', margin: '0 0.15em' } },
+        React.createElement('span', { style: { borderBottom: '1px solid currentColor', paddingBottom: '1px', lineHeight: 1 } }, numStr),
+        React.createElement('span', { style: { paddingTop: '1px', lineHeight: 1 } }, denStr)
+      );
+    };
+
+    // Display a number, using fraction if appropriate
+    const DisplayNum = ({ value }) => {
+      const s = fmt(value);
+      if (s.includes('/')) {
+        const [num, den] = s.split('/');
+        return React.createElement(Frac, { num, den });
+      }
+      return React.createElement(React.Fragment, null, s);
+    };
+
+    // Display a simplified sqrt expression
+    const SqrtDisplay = ({ radicand }) => {
+      const simplified = simplifySqrt(radicand);
+      if (simplified.isFraction) {
+        return React.createElement(
+          React.Fragment,
+          null,
+          React.createElement(Frac, { num: simplified.numerator, den: simplified.denominator })
+        );
+      }
+      return React.createElement(React.Fragment, null, simplified.radical);
+    };
+
+    // ----------------------------------------------------------------------
+    // 5. Examples
+    // ----------------------------------------------------------------------
+    const EXAMPLES = [
+      { p: 6, c: 11 },
+      { p: -8, c: 5 },
+      { p: 10, c: -3 },
+      { p: -4, c: 9 },
+      { p: 5, c: 6 },
+      { p: -7, c: 3 },
+      { p: 9, c: -4 },
+      { p: -12, c: -7 },
+      { p: 14, c: 2 },
+    ];
+
+    function randomExample() {
+      return EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)];
+    }
+
+    // ----------------------------------------------------------------------
+    // 6. Sub‑components for practice
+    // ----------------------------------------------------------------------
+    const TabButton = ({ active, onClick, children }) =>
+      React.createElement("button", { className: active ? "tab active" : "tab", onClick }, children);
+
+    const StepInput = ({
+      title,
+      prompt,
+      hint,
+      value,
+      onChange,
+      placeholder,
+      checked,
+      correct,
+      supported,
+      equalsPrefix = "",
+    }) =>
+      React.createElement(
+        "div",
+        { className: "stepCard" },
+        React.createElement(
+          "div",
+          { className: "stepHeader" },
+          React.createElement(
+            "div",
+            null,
+            React.createElement("h3", null, title),
+            React.createElement("p", { className: "muted" }, supported ? prompt : title)
+          ),
+          checked &&
+            React.createElement(
+              "span",
+              { className: correct ? "correct" : "incorrect" },
+              correct ? "✓" : "✗"
+            )
+        ),
+        supported && React.createElement("p", { className: "tiny" }, hint),
+        equalsPrefix
+          ? React.createElement(
+              "div",
+              { className: "equationInputRow" },
+              React.createElement("span", { className: "equalsPrefix" }, equalsPrefix),
+              React.createElement("input", {
+                className: "studentInput",
+                value,
+                placeholder,
+                onChange: (e) => onChange(e.target.value),
+              })
+            )
+          : React.createElement("input", {
+              className: "studentInput",
+              value,
+              placeholder,
+              onChange: (e) => onChange(e.target.value),
+            }),
+        checked &&
+          React.createElement(
+            "p",
+            { className: correct ? "feedback correct" : "feedback incorrect" },
+            correct
+              ? "Correct."
+              : "Check this line carefully. Follow the bracketed pattern shown in the demonstration."
+          )
+      );
+
+    const FormChoice = ({ value, onChange, checked, correct, supported }) => {
+      const options = ["a² + 2ab + b²", "a² − 2ab + b²"];
+      return React.createElement(
+        "div",
+        { className: "stepCard" },
+        React.createElement(
+          "div",
+          { className: "stepHeader" },
+          React.createElement(
+            "div",
+            null,
+            React.createElement("h3", null, "Step 1: Perfect-square form"),
+            React.createElement(
+              "p",
+              { className: "muted" },
+              supported
+                ? "Which form of the perfect square should you be looking to create?"
+                : "Select the perfect-square form."
+            )
+          ),
+          checked &&
+            React.createElement(
+              "span",
+              { className: correct ? "correct" : "incorrect" },
+              correct ? "✓" : "✗"
+            )
+        ),
+        supported &&
+          React.createElement(
+            "p",
+            { className: "tiny" },
+            "Use a² + 2ab + b² if the middle term is positive, and a² − 2ab + b² if it is negative."
+          ),
+        React.createElement(
+          "div",
+          { className: "choiceRow" },
+          options.map((option) =>
+            React.createElement(
+              "button",
+              {
+                key: option,
+                type: "button",
+                className: value === option ? "choiceButton selected" : "choiceButton",
+                onClick: () => onChange(option),
+              },
+              option
+            )
+          )
+        ),
+        checked &&
+          React.createElement(
+            "p",
+            { className: correct ? "feedback correct" : "feedback incorrect" },
+            correct
+              ? "Correct."
+              : "Choose the form that matches the sign of the middle term."
+          )
+      );
+    };
+
+    const FactorChoice = ({ value, onChange, checked, correct, supported, canFactor }) => {
+      const options = [
+        { value: "yes", label: "Yes — use difference of two squares" },
+        { value: "no", label: "No — it will not factor further over the real numbers" },
+      ];
+      return React.createElement(
+        "div",
+        { className: "stepCard" },
+        React.createElement(
+          "div",
+          { className: "stepHeader" },
+          React.createElement(
+            "div",
+            null,
+            React.createElement("h3", null, "Step 6: Factorisation check"),
+            React.createElement(
+              "p",
+              { className: "muted" },
+              "Can the quadratic be fully factorised from turning-point form?"
+            )
+          ),
+          checked &&
+            React.createElement(
+              "span",
+              { className: correct ? "correct" : "incorrect" },
+              correct ? "✓" : "✗"
+            )
+        ),
+        supported &&
+          React.createElement(
+            "p",
+            { className: "tiny" },
+            "Over the real numbers, difference of two squares applies whenever the turning-point form has the structure A² − B."
+          ),
+        React.createElement(
+          "div",
+          { className: "choiceRow" },
+          options.map((option) =>
+            React.createElement(
+              "button",
+              {
+                key: option.value,
+                type: "button",
+                className: value === option.value ? "choiceButton selected" : "choiceButton",
+                onClick: () => onChange(option.value),
+              },
+              option.label
+            )
+          )
+        ),
+        checked &&
+          React.createElement(
+            "p",
+            { className: correct ? "feedback correct" : "feedback incorrect" },
+            correct
+              ? "Correct."
+              : canFactor
+              ? "This can factorise over the real numbers because the turning-point form contains a subtraction."
+              : "This does not factor further over the real numbers from turning-point form because it is not a difference of two squares."
+          )
+      );
+    };
+
+    const RadicandInput = ({ value, onChange, checked, correct, supported, p, c }) => {
+      const b = bValue(p);
+      const sign = Number(p) >= 0 ? "+" : "−";
+      const radicandVal = radicandValue(p, c);
+      const simplified = simplifySqrt(radicandVal);
+      return React.createElement(
+        "div",
+        { className: "stepCard" },
+        React.createElement(
+          "div",
+          { className: "stepHeader" },
+          React.createElement(
+            "div",
+            null,
+            React.createElement("h3", null, "Step 7: Complete the factorisation"),
+            React.createElement(
+              "p",
+              { className: "muted" },
+              "Enter the number under the square root sign."
+            )
+          ),
+          checked &&
+            React.createElement(
+              "span",
+              { className: correct ? "correct" : "incorrect" },
+              correct ? "✓" : "✗"
+            )
+        ),
+        supported &&
+          React.createElement(
+            "p",
+            { className: "tiny" },
+            "For the radicand you may enter an improper fraction like 37/4. The factorisation will be displayed with a simplified radical."
+          ),
+        React.createElement(
+          "div",
+          { className: "equationInputRow" },
+          React.createElement("span", { className: "equalsPrefix" }, "number under √ ="),
+          React.createElement("input", {
+            className: "studentInput",
+            value,
+            placeholder: "e.g. 37/4",
+            onChange: (e) => onChange(e.target.value),
+          })
+        ),
+        React.createElement(
+          "div",
+          { className: "factorPreview" },
+          quadraticText(p, c),
+          " = (x ",
+          sign,
+          " ",
+          React.createElement(DisplayNum, { value: b }),
+          " − ",
+          React.createElement(SqrtDisplay, { radicand: radicandVal }),
+          ")(x ",
+          sign,
+          " ",
+          React.createElement(DisplayNum, { value: b }),
+          " + ",
+          React.createElement(SqrtDisplay, { radicand: radicandVal }),
+          ")"
+        ),
+        checked &&
+          React.createElement(
+            "p",
+            { className: correct ? "feedback correct" : "feedback incorrect" },
+            correct
+              ? "Correct."
+              : "Check the value being subtracted from the square term in turning-point form."
+          )
+      );
+    };
+
+    // ----------------------------------------------------------------------
+    // 7. Main App
+    // ----------------------------------------------------------------------
+    const App = () => {
+      const [mode, setMode] = React.useState("supported");
+      const [bottomTab, setBottomTab] = React.useState("challenge");
+      const [example, setExample] = React.useState(EXAMPLES[0]);
+      const [customP, setCustomP] = React.useState(6);
+      const [customC, setCustomC] = React.useState(11);
+      const [showWorking, setShowWorking] = React.useState(true);
+      const [checked, setChecked] = React.useState(false);
+      const [answers, setAnswers] = React.useState({
+        form: "",
+        b: "",
+        middle: "",
+        fullLine: "",
+        final: "",
+        factor: "",
+        radicand: "",
+      });
+
+      const supported = mode === "supported";
+      const p = supported ? example.p : Number(customP);
+      const c = supported ? example.c : Number(customC);
+      const b = bValue(p);
+      const b2 = squareTerm(p);
+
+      // Placeholders (using slash notation because students type that way)
+      const bPlaceholder = `e.g. ${fmt(b)}`;
+      const sign = Number(p) >= 0 ? "+" : "−";
+      const middlePlaceholder = `e.g. ${quadraticText(p, c)} = x² ${sign} 2(x)(${fmt(b)})${signedTerm(Number(c))}`;
+      const fullPlaceholder = `e.g. ${quadraticText(p, c)} = x² ${sign} 2(x)(${fmt(b)}) + ${powerText(b)}${signedTerm(Number(c))} − ${powerText(b)}`;
+      const finalPlaceholder = `e.g. ${quadraticText(p, c)} = ${finalText(p, c)}`;
+
+      // Validation
+      const checks = React.useMemo(() => {
+        const bCorrect = (() => {
+          const val = answers.b;
+          if (val === "") return false;
+          const num = parseFraction(val);
+          if (!Number.isFinite(num) || Math.abs(num - b) > 1e-9) return false;
+          if (!Number.isInteger(b)) {
+            return normalise(val).includes("/");
+          }
+          return true;
+        })();
+
+        return {
+          form: acceptForm(answers.form, p),
+          b: bCorrect,
+          middle: acceptBracketedMiddle(answers.middle, p, c),
+          fullLine: acceptFullLine(answers.fullLine, p, c),
+          final: acceptFinal(answers.final, p, c),
+          factor: acceptFactorisationDecision(answers.factor, p, c),
+          radicand: acceptRadicand(answers.radicand, p, c),
+        };
+      }, [answers, p, c, b]);
+
+      const relevantChecks =
+        canFactorFromTurningPoint(p, c) && answers.factor === "yes"
+          ? checks
+          : {
+              form: checks.form,
+              b: checks.b,
+              middle: checks.middle,
+              fullLine: checks.fullLine,
+              final: checks.final,
+              factor: checks.factor,
+            };
+
+      const allCorrect = Object.values(relevantChecks).every(Boolean);
+
+      const clear = () => {
+        setAnswers({ form: "", b: "", middle: "", fullLine: "", final: "", factor: "", radicand: "" });
+        setChecked(false);
+      };
+
+      const updateAnswer = (key, value) => {
+        setAnswers((prev) => ({ ...prev, [key]: value }));
+        setChecked(false);
+      };
+
+      const reset = () => {
+        setMode("supported");
+        setExample(EXAMPLES[0]);
+        setCustomP(6);
+        setCustomC(11);
+        setShowWorking(true);
+        setBottomTab("challenge");
+        clear();
+      };
+
+      const newQuestion = () => {
+        setExample(randomExample());
+        clear();
+      };
+
+      // Demonstration content using fraction display
+      const demonstration = React.createElement(
+        "div",
+        { className: "working" },
+        React.createElement("p", null, "Expression: ", quadraticText(p, c)),
+        React.createElement("p", null, "Perfect-square form: ", formText(p)),
+        React.createElement(
+          "p",
+          null,
+          quadraticText(p, c),
+          " = ",
+          middleRewriteWithConstant(p, c)
+        ),
+        React.createElement(
+          "p",
+          null,
+          quadraticText(p, c),
+          " = ",
+          addSubtractLine(p, c)
+        ),
+        React.createElement(
+          "p",
+          null,
+          quadraticText(p, c),
+          " = ",
+          React.createElement("span", { className: "answer" }, finalText(p, c))
+        ),
+        React.createElement(
+          "p",
+          null,
+          "Can it now be factorised over the real numbers using difference of two squares? ",
+          canFactorFromTurningPoint(p, c)
+            ? React.createElement(
+                React.Fragment,
+                null,
+                "Yes: ",
+                React.createElement(
+                  "span",
+                  { className: "answer" },
+                  "(x ",
+                  sign,
+                  " ",
+                  React.createElement(DisplayNum, { value: b }),
+                  " − ",
+                  React.createElement(SqrtDisplay, { radicand: radicandValue(p, c) }),
+                  ")(x ",
+                  sign,
+                  " ",
+                  React.createElement(DisplayNum, { value: b }),
+                  " + ",
+                  React.createElement(SqrtDisplay, { radicand: radicandValue(p, c) }),
+                  ")"
+                )
+              )
+            : React.createElement("span", { className: "answer" }, "Does not factor further over the real numbers.")
+        )
+      );
+
+      // Fraction‑aware display of key values
+      const keyValues = React.createElement(
+        React.Fragment,
+        null,
+        React.createElement("h3", null, "Key values"),
+        React.createElement(
+          "div",
+          { className: "summaryGrid" },
+          React.createElement(
+            "div",
+            { className: "summaryBox" },
+            "b = ",
+            React.createElement(DisplayNum, { value: b })
+          ),
+          React.createElement(
+            "div",
+            { className: "summaryBox" },
+            "b² = ",
+            React.createElement(DisplayNum, { value: b2 })
+          )
+        ),
+        React.createElement(
+          "p",
+          { className: "tiny" },
+          "The applet is designed for monic quadratics: x² + px + c."
+        )
+      );
+
+      return React.createElement(
+        "main",
+        { className: "page" },
+        // Hero
+        React.createElement(
+          "section",
+          { className: "hero" },
+          React.createElement(
+            "div",
+            null,
+            React.createElement("span", { className: "badge" }, "Mathematics"),
+            React.createElement("h1", null, "Completing the Square"),
+            React.createElement(
+              "p",
+              null,
+              "Build the perfect square by identifying the pattern, rewriting the middle term, and adding then subtracting b²."
+            )
+          ),
+          React.createElement(
+            "button",
+            { className: "outlineButton", onClick: reset },
+            "↺ Reset example"
+          )
+        ),
+        // Main grid
+        React.createElement(
+          "section",
+          { className: "mainGrid" },
+          // Left column: inputs
+          React.createElement(
+            "aside",
+            { className: "card inputsCard" },
+            React.createElement("h2", null, "Inputs"),
+            React.createElement(
+              "p",
+              { className: "muted" },
+              "Choose supported practice or enter your own monic quadratic expression."
+            ),
+            React.createElement(
+              "div",
+              { className: "controlGroup" },
+              React.createElement("label", null, "Mode"),
+              React.createElement(
+                "select",
+                {
+                  value: mode,
+                  onChange: (e) => {
+                    setMode(e.target.value);
+                    clear();
+                  },
+                },
+                React.createElement("option", { value: "supported" }, "Supported mode"),
+                React.createElement("option", { value: "unsupported" }, "Unsupported mode")
+              )
+            ),
+            !supported &&
+              React.createElement(
+                "div",
+                { className: "inputGroup" },
+                React.createElement("label", null, "Expression x² + px + c"),
+                React.createElement(
+                  "div",
+                  { className: "pair" },
+                  React.createElement("input", {
+                    type: "number",
+                    step: "any",
+                    value: customP,
+                    title: "p",
+                    onChange: (e) => {
+                      setCustomP(Number(e.target.value));
+                      clear();
+                    },
+                  }),
+                  React.createElement("input", {
+                    type: "number",
+                    step: "any",
+                    value: customC,
+                    title: "c",
+                    onChange: (e) => {
+                      setCustomC(Number(e.target.value));
+                      clear();
+                    },
+                  })
+                ),
+                React.createElement(
+                  "p",
+                  { className: "tiny" },
+                  "First box: coefficient of x. Second box: constant term."
+                )
+              ),
+            supported &&
+              React.createElement(
+                "button",
+                { className: "primaryButton", onClick: newQuestion },
+                "New supported example"
+              ),
+            React.createElement("div", { className: "expressionBox" }, quadraticText(p, c)),
+            React.createElement("div", { className: "representationBox" }, keyValues)
+          ),
+          // Right column: method demonstration card
+          React.createElement(
+            "section",
+            { className: "card methodCard" },
+            React.createElement(
+              "div",
+              { className: "tabs two" },
+              React.createElement(TabButton, {
+                active: showWorking,
+                onClick: () => setShowWorking(true),
+              }, "Demonstration"),
+              React.createElement(TabButton, {
+                active: !showWorking,
+                onClick: () => setShowWorking(false),
+              }, "Hide demonstration")
+            ),
+            React.createElement(
+              "div",
+              { className: "methodGrid" },
+              React.createElement(
+                "div",
+                null,
+                React.createElement("h2", null, "Method demonstration"),
+                React.createElement(
+                  "p",
+                  { className: "muted" },
+                  "Students are encouraged to keep the bracketed form 2(x)(b) so the perfect-square pattern remains visible."
+                )
+              ),
+              showWorking
+                ? demonstration
+                : React.createElement("p", { className: "muted" }, "Demonstration hidden."),
+              React.createElement(
+                "p",
+                { className: "note" },
+                "Teaching note: the check for the middle-term line deliberately expects brackets, includes the constant term, and keeps b² in unsimplified form where appropriate."
+              )
+            )
+          )
+        ),
+        // Bottom section: student practice / teacher guide / voiceover
+        React.createElement(
+          "section",
+          { className: "card" },
+          React.createElement(
+            "div",
+            { className: "tabs three" },
+            React.createElement(TabButton, {
+              active: bottomTab === "challenge",
+              onClick: () => setBottomTab("challenge"),
+            }, "Student practice"),
+            React.createElement(TabButton, {
+              active: bottomTab === "guide",
+              onClick: () => setBottomTab("guide"),
+            }, "Teacher guide"),
+            React.createElement(TabButton, {
+              active: bottomTab === "voiceover",
+              onClick: () => setBottomTab("voiceover"),
+            }, "Voice-over draft")
+          ),
+          bottomTab === "challenge" &&
+            React.createElement(
+              "div",
+              { className: "tabContent" },
+              React.createElement(
+                "div",
+                { className: "rowBetween" },
+                React.createElement("h2", null, "Student practice"),
+                React.createElement(
+                  "div",
+                  { className: "buttonRow" },
+                  React.createElement(
+                    "button",
+                    { className: "primaryButton", onClick: () => setChecked(true) },
+                    "Check working"
+                  ),
+                  React.createElement(
+                    "button",
+                    { className: "outlineButton", onClick: clear },
+                    "Clear"
+                  )
+                )
+              ),
+              React.createElement(FormChoice, {
+                value: answers.form,
+                onChange: (v) => updateAnswer("form", v),
+                checked,
+                correct: checks.form,
+                supported,
+              }),
+              React.createElement(StepInput, {
+                title: "Step 2: Identify b",
+                prompt: "To rewrite the middle term, what value should you assign to b?",
+                hint: "Since a = x, b is half the absolute value of the coefficient of x.",
+                value: answers.b,
+                onChange: (v) => updateAnswer("b", v),
+                placeholder: bPlaceholder,
+                checked,
+                correct: checks.b,
+                supported,
+              }),
+              React.createElement(StepInput, {
+                title: "Step 3: Rewrite the middle term",
+                prompt:
+                  "Rewrite the expression, including the constant term, with the middle term in bracketed form 2(x)(b).",
+                hint: "Keep the brackets visible and include the constant term. Do not simplify this line to 6x.",
+                value: answers.middle,
+                onChange: (v) => updateAnswer("middle", v),
+                placeholder: middlePlaceholder,
+                checked,
+                correct: checks.middle,
+                supported,
+                equalsPrefix: `${quadraticText(p, c)} =`,
+              }),
+              React.createElement(StepInput, {
+                title: "Step 4: Add and subtract b²",
+                prompt: "Now add b² and subtract b² in the same line.",
+                hint: "Use the square notation, such as 3², to keep the perfect-square structure visible.",
+                value: answers.fullLine,
+                onChange: (v) => updateAnswer("fullLine", v),
+                placeholder: fullPlaceholder,
+                checked,
+                correct: checks.fullLine,
+                supported,
+                equalsPrefix: `${quadraticText(p, c)} =`,
+              }),
+              React.createElement(StepInput, {
+                title: "Step 5: Turning-point form",
+                prompt: "Write the expression in turning-point form.",
+                hint: "Group the perfect square, then simplify the remaining constants. This is the turning-point form of the quadratic.",
+                value: answers.final,
+                onChange: (v) => updateAnswer("final", v),
+                placeholder: finalPlaceholder,
+                checked,
+                correct: checks.final,
+                supported,
+                equalsPrefix: `${quadraticText(p, c)} =`,
+              }),
+              React.createElement(FactorChoice, {
+                value: answers.factor,
+                onChange: (v) => updateAnswer("factor", v),
+                checked,
+                correct: checks.factor,
+                supported,
+                canFactor: canFactorFromTurningPoint(p, c),
+              }),
+              answers.factor === "yes" &&
+                canFactorFromTurningPoint(p, c) &&
+                React.createElement(RadicandInput, {
+                  value: answers.radicand,
+                  onChange: (v) => updateAnswer("radicand", v),
+                  checked,
+                  correct: checks.radicand,
+                  supported,
+                  p,
+                  c,
+                }),
+              checked &&
+                React.createElement(
+                  "p",
+                  { className: allCorrect ? "note correct" : "note incorrect" },
+                  allCorrect
+                    ? "Excellent — all steps are correct."
+                    : "Some steps need attention. Use the feedback above and keep the bracketed 2(x)(b) structure visible."
+                )
+            ),
+          bottomTab === "guide" &&
+            React.createElement(
+              "div",
+              { className: "tabContent" },
+              React.createElement("h2", null, "Short teacher guide"),
+              React.createElement(
+                "p",
+                null,
+                "This applet is intentionally restricted to monic quadratics of the form x² + px + c."
+              ),
+              React.createElement(
+                "p",
+                null,
+                "The supported mode prompts students through the structure of the method. The unsupported mode allows students to enter their own p and c values, then check each line of working."
+              ),
+              React.createElement(
+                "p",
+                { className: "note" },
+                "After turning-point form, students decide whether difference of two squares can complete the factorisation over the real numbers. If it can, they only need to enter the radicand, such as 37/4 for √(37/4), and the factorisation will be displayed with a simplified radical (e.g., √37/2)."
+              )
+            ),
+          bottomTab === "voiceover" &&
+            React.createElement(
+              "div",
+              { className: "tabContent" },
+              React.createElement("h2", null, "Suggested voice-over draft"),
+              React.createElement(
+                "p",
+                null,
+                "“To complete the square, we are trying to build a perfect square trinomial. The sign of the middle term tells us whether to use a² plus 2ab plus b², or a² minus 2ab plus b².”"
+              ),
+              React.createElement(
+                "p",
+                null,
+                "“Here, a is x. To identify b, halve the coefficient of x and use its positive value in the bracketed product 2(x)(b).”"
+              ),
+              React.createElement(
+                "p",
+                null,
+                "“The result is turning-point form. If the remaining constant creates a difference of two squares, we can continue factorising over the real numbers.”"
+              )
+            )
+        )
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</body>
+</html>
