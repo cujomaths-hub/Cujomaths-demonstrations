@@ -1,0 +1,308 @@
+/* Shared design system for Cujomaths applets.
+   Keep this file stable so many applets can rely on it. */
+
+/* Base */
+* { box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  background: #f8fafc;
+  margin: 0;
+  padding: 24px 20px;
+  color: #0f172a;
+}
+
+.page {
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+/* Hero */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
+  background: white;
+  padding: 24px 28px;
+  border-radius: 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.badge {
+  background: #eef2ff;
+  color: #1e40af;
+  padding: 4px 12px;
+  border-radius: 40px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+.hero h1 { margin: 0 0 8px 0; font-size: 1.8rem; }
+.hero p { margin: 0; color: #334155; }
+
+/* Cards & layout */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 28px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 900px) {
+  .mainGrid { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  padding: 20px 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.inputsCard { align-self: start; }
+
+.methodCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fefefe;
+}
+
+.tabs.two button,
+.tabs.three button { flex: 1; }
+
+.tab {
+  background: transparent;
+  border: none;
+  padding: 14px 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: 0.1s;
+}
+
+.tab.active {
+  color: #0f172a;
+  border-bottom: 2px solid #3b82f6;
+  background: #fafcff;
+}
+
+.methodGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px 24px 24px 24px;
+}
+
+/* Inputs */
+.inputGroup { margin-bottom: 20px; }
+.inputGroup label,
+.controlGroup label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 8px;
+  color: #1e293b;
+}
+
+.triple,
+.quad,
+.pair {
+  display: flex;
+  gap: 12px;
+}
+
+.triple input,
+.quad input,
+.pair input,
+select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-family: monospace;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.quad input { min-width: 0; }
+
+input[type="range"] { width: 100%; accent-color: #2563eb; }
+
+.controlGroup { margin-bottom: 20px; }
+
+.error {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  margin-top: 12px;
+}
+
+.representationBox {
+  background: #f1f5f9;
+  border-radius: 20px;
+  padding: 12px 16px;
+  margin: 16px 0 8px;
+}
+
+/* Buttons */
+.buttonRow {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.pill {
+  background: #e2e8f0;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.activePill { background: #0f172a; color: white; }
+
+.outlineButton {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  padding: 6px 14px;
+  border-radius: 40px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.outlineButton.small { font-size: 0.75rem; padding: 4px 12px; }
+
+/* Text helpers */
+.muted { color: #475569; font-size: 0.85rem; }
+.tiny { font-size: 0.7rem; color: #5b6e8c; }
+
+.rowBetween {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.workingHeader { margin: 16px 0 12px; }
+
+/* Maths display boxes */
+.formulaBox {
+  font-family: monospace;
+  background: white;
+  padding: 12px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  margin: 8px 0 4px;
+  overflow-x: auto;
+}
+
+.working {
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 12px 16px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 2;
+}
+
+.answer {
+  font-weight: 700;
+  background: #e6f0ff;
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.note {
+  font-size: 0.8rem;
+  background: #fef9e3;
+  padding: 10px 14px;
+  border-radius: 20px;
+  margin-top: 14px;
+}
+
+/* SVG diagram helpers */
+.diagramCard {
+  background: #fefefe;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 12px;
+}
+
+.diagramSvg {
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+  border-radius: 16px;
+  margin: 8px 0;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 12px 8px;
+  font-size: 0.75rem;
+}
+
+.swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 20px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.caption {
+  font-size: 0.7rem;
+  color: #475569;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Lower sections */
+.lowerCard { margin-top: 16px; }
+.tabContent { padding: 20px 0 8px; }
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 520px) {
+  .summaryGrid { grid-template-columns: 1fr; }
+}
+
+.summaryBox {
+  background: #f1f5f9;
+  border-radius: 18px;
+  padding: 10px 12px;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
