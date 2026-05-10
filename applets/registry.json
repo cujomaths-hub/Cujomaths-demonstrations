@@ -1,0 +1,27 @@
+[
+  {
+    "slug": "shortest distance from a point to a line",
+    "title": "📏 Point to Line Distance in 3D",
+    "description": "Compare three methods: cross product, projection, and nearest point.",
+    "badges": ["Vectors", "3D Geometry"],
+    "topics": ["Vectors", "3D Geometry"],
+    "yearLevels": [11, 12]
+  },
+  {
+    "slug": "distance-from-point-to-plane",
+    "title": "📐 Distance from a Point to a Plane",
+    "description": "Perpendicular distance, closest point on plane, and visualisation.",
+    "badges": ["Vectors", "3D Geometry", "Planes"],
+    "topics": ["Vectors", "3D Geometry"],
+    "yearLevels": [11, 12]
+  },
+  {
+    "slug": "completing-the-square",
+    "title": "📐 Completing the square",
+    "description": "Reasoning and steps behind completing the square.",
+    "badges": ["Algebra", "Quadratics", "Factorisation"],
+    "topics": ["Algebra"],
+    "yearLevels": [9, 10, 11]
+  }
+]
+
