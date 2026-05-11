@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>3D Point-to-Line Distance Demonstrator | Specialist Mathematics</title>
+    <script>
+        (function () {
+            try {
+                var k = "cujomaths-theme";
+                var v = localStorage.getItem(k);
+                if (v !== "light" && v !== "dark" && v !== "system") v = "system";
+                var d = "light";
+                if (v === "dark") d = "dark";
+                else if (v === "light") d = "light";
+                else d = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                document.documentElement.dataset.theme = d;
+                document.documentElement.dataset.themeSetting = v;
+            } catch (e) {}
+        })();
+    </script>
     <!-- React + Babel from CDN (no build step needed) -->
     <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
@@ -15,6 +30,10 @@
         .swatch.blue { background: #2563eb; }
         .swatch.green { background: #059669; }
         .swatch.black { background: #0f172a; }
+        .inputsCard input:read-only {
+            background: var(--cm-representation-bg);
+            cursor: default;
+        }
     </style>
 </head>
 <body>
@@ -23,6 +42,9 @@
 <script type="text/babel" data-type="module">
     import { dot, cross, mag, sub, add, mul } from "../shared/math/vector3.js";
     import { fmt, vecText } from "../shared/math/format.js";
+    import { TeacherModeToggle, InstructionsDetails, ThemeSelect } from "../shared/ui/applet-ui.js";
+    import { readPointToLineState, buildPointToLineQuery, replaceHistoryQuery } from "../shared/ui/url-state.js";
+    import { StepInput, ScaffoldedStepList } from "../shared/ui/scaffold-steps.js";
 
     // ---------- Utility functions ----------
     function gcd(a,b) { a=Math.abs(a); b=Math.abs(b); while(b) [a,b]=[b,a%b]; return a||1; }
@@ -30,12 +52,48 @@
     function exactDistanceText(areaSquared, vSquared) { if(!Number.isInteger(areaSquared)||!Number.isInteger(vSquared)||vSquared===0) return "not available"; const common=gcd(areaSquared, vSquared); const top=areaSquared/common; const bottom=vSquared/common; if(bottom===1) return simplifySqrt(top); return `${simplifySqrt(top)} / ${simplifySqrt(bottom)}`; }
     function fractionLine(A, v) { const labels=["x","y","z"]; const parts=[]; const fixed=[]; labels.forEach((label,i)=>{ if(v[i]===0) { fixed.push(`${label} = ${fmt(A[i])}`); return; } const shift = A[i]===0 ? label : A[i]>0 ? `${label} - ${fmt(A[i])}` : `${label} + ${fmt(Math.abs(A[i]))}`; parts.push(`(${shift})/${fmt(v[i])}`); }); if(parts.length===0) return "No Cartesian form: the direction vector is zero."; return [...fixed, parts.join(" = ")].join(", "); }
 
+    /** Preset configurations for supported mode (integer-friendly where possible). */
+    const LINE_EXAMPLES = [
+        { P: [4, 5, 3], A: [1, 2, -1], v: [3, -2, 4] },
+        { P: [0, 0, 1], A: [0, 0, 0], v: [1, 0, 0] },
+        { P: [2, 2, 2], A: [0, 0, 0], v: [0, 0, 1] },
+        { P: [1, 0, 0], A: [0, 1, 0], v: [1, 1, 0] },
+        { P: [-1, 3, 2], A: [0, 0, 0], v: [2, 1, 2] },
+        { P: [0, 1, 0], A: [0, 0, 0], v: [1, 0, 0] },
+    ];
 
-    const NumberTriple = ({ label, values, onChange }) => {
+    function parseVec3Input(str) {
+        const cleaned = String(str).replace(/[\s()[\]]/g, "");
+        const parts = cleaned.split(",").filter((s) => s.length).map((s) => Number(s));
+        if (parts.length !== 3 || !parts.every((n) => Number.isFinite(n))) return null;
+        return parts;
+    }
+
+    function vectorsClose(a, b, tol = 1e-5) {
+        return (
+            Math.abs(a[0] - b[0]) <= tol &&
+            Math.abs(a[1] - b[1]) <= tol &&
+            Math.abs(a[2] - b[2]) <= tol
+        );
+    }
+
+    function numClose(a, b, rel = 1e-5) {
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
+        return Math.abs(a - b) <= rel * (1 + Math.abs(b)) || Math.abs(a - b) < 1e-9;
+    }
+
+    const NumberTriple = ({ label, values, onChange, readOnly }) => {
         return React.createElement("div", { className: "inputGroup" },
             React.createElement("label", null, label),
             React.createElement("div", { className: "triple" },
-                values.map((value, idx) => React.createElement("input", { key: idx, type: "number", step: "1", value: value, onChange: (e) => { const next = [...values]; next[idx] = Number(e.target.value); onChange(next); } }))
+                values.map((value, idx) => React.createElement("input", {
+                    key: idx,
+                    type: "number",
+                    step: "any",
+                    value,
+                    readOnly: !!readOnly,
+                    onChange: readOnly ? undefined : (e) => { const next = [...values]; next[idx] = Number(e.target.value); onChange(next); },
+                }))
             )
         );
     };
@@ -98,14 +156,85 @@
     const WorkingToggle = ({ showWorking, setShowWorking }) => React.createElement("div", { className: "rowBetween workingHeader" }, React.createElement("h3", null, "Concise working"), React.createElement("button", { className: "outlineButton small", onClick: () => setShowWorking(!showWorking) }, showWorking ? "Hide" : "Show", " working"));
 
     const App = () => {
-        const [P, setP] = React.useState([4, 5, 3]);
-        const [A, setA] = React.useState([1, 2, -1]);
-        const [v, setV] = React.useState([3, -2, 4]);
-        const [form, setForm] = React.useState("vector");
-        const [method, setMethod] = React.useState("cross");
-        const [bottomTab, setBottomTab] = React.useState("challenge");
-        const [showWorking, setShowWorking] = React.useState(true);
-        const [showChallengeAnswer, setShowChallengeAnswer] = React.useState(false);
+        const initialUrl = React.useMemo(
+            () => readPointToLineState(window.location.search, LINE_EXAMPLES),
+            []
+        );
+        const [mode, setMode] = React.useState(initialUrl.mode);
+        const [exampleIndex, setExampleIndex] = React.useState(initialUrl.exampleIndex);
+        const [P, setP] = React.useState(initialUrl.P);
+        const [A, setA] = React.useState(initialUrl.A);
+        const [v, setV] = React.useState(initialUrl.v);
+        const [form, setForm] = React.useState(initialUrl.form);
+        const [method, setMethod] = React.useState(initialUrl.method);
+        const [teacherMode, setTeacherMode] = React.useState(initialUrl.teacherMode);
+        const [bottomTab, setBottomTab] = React.useState(initialUrl.bottomTab);
+        const [showWorking, setShowWorking] = React.useState(initialUrl.showWorking);
+        const [practiceMode, setPracticeMode] = React.useState(initialUrl.practiceMode);
+        const [answers, setAnswers] = React.useState({
+            ap: "",
+            vMag: "",
+            crossArea: "",
+            projLen: "",
+            lambda: "",
+            distance: "",
+        });
+        const [checked, setChecked] = React.useState(false);
+        const [copyHint, setCopyHint] = React.useState("");
+        const skipFirstUrlSync = React.useRef(true);
+
+        const supported = mode === "supported";
+
+        const urlPayload = () => ({
+            teacherMode,
+            bottomTab,
+            method,
+            form,
+            showWorking,
+            mode,
+            practiceMode,
+            P,
+            A,
+            v,
+        });
+
+        React.useEffect(() => {
+            if (skipFirstUrlSync.current) {
+                skipFirstUrlSync.current = false;
+                return;
+            }
+            replaceHistoryQuery(buildPointToLineQuery(urlPayload(), LINE_EXAMPLES));
+        }, [
+            teacherMode,
+            bottomTab,
+            method,
+            form,
+            showWorking,
+            mode,
+            practiceMode,
+            P[0],
+            P[1],
+            P[2],
+            A[0],
+            A[1],
+            A[2],
+            v[0],
+            v[1],
+            v[2],
+        ]);
+
+        const copyShareLink = async () => {
+            const q = buildPointToLineQuery(urlPayload(), LINE_EXAMPLES);
+            const path = q ? `${window.location.pathname}?${q}` : window.location.pathname;
+            const url = `${window.location.origin}${path}`;
+            try {
+                await navigator.clipboard.writeText(url);
+                setCopyHint("Link copied");
+                window.setTimeout(() => setCopyHint(""), 2000);
+            } catch {
+                window.prompt("Copy this link:", url);
+            }
+        };
 
         const data = React.useMemo(() => {
             const AP = sub(P, A);
@@ -133,20 +262,125 @@
         }, [P,A,v]);
 
         const directionInvalid = mag(v) === 0;
-        const reset = () => { setP([4,5,3]); setA([1,2,-1]); setV([3,-2,4]); setForm("vector"); setMethod("cross"); setBottomTab("challenge"); setShowWorking(true); setShowChallengeAnswer(false); };
+
+        const clearPractice = () => {
+            setAnswers({ ap: "", vMag: "", crossArea: "", projLen: "", lambda: "", distance: "" });
+            setChecked(false);
+        };
+
+        const updateAnswer = (key, value) => {
+            setAnswers((prev) => ({ ...prev, [key]: value }));
+            setChecked(false);
+        };
+
+        const checks = React.useMemo(() => {
+            const parsedAp = parseVec3Input(answers.ap);
+            const apOk = !!parsedAp && vectorsClose(parsedAp, data.AP);
+            const vMagNum = Number(String(answers.vMag).trim());
+            const vMagOk = Number.isFinite(vMagNum) && numClose(vMagNum, data.vMag);
+            const crossAreaNum = Number(String(answers.crossArea).trim());
+            const crossAreaOk = Number.isFinite(crossAreaNum) && numClose(crossAreaNum, data.area);
+            const projLenNum = Number(String(answers.projLen).trim());
+            const projLenOk = Number.isFinite(projLenNum) && numClose(projLenNum, data.projLength);
+            const lamNum = Number(String(answers.lambda).trim());
+            const lamOk = Number.isFinite(lamNum) && numClose(lamNum, data.lambdaN);
+            const distNum = Number(String(answers.distance).trim());
+            const distOk =
+                Number.isFinite(distNum) &&
+                !directionInvalid &&
+                (numClose(distNum, data.crossDistance) ||
+                    numClose(distNum, data.projectionDistance) ||
+                    numClose(distNum, data.nearestDistance));
+            return { apOk, vMagOk, crossAreaOk, projLenOk, lamOk, distOk };
+        }, [answers, data, directionInvalid]);
+
+        const practiceChecks = React.useMemo(() => {
+            if (practiceMode === "unscaffolded") return { dist: checks.distOk };
+            if (method === "cross") return { ap: checks.apOk, vMag: checks.vMagOk, area: checks.crossAreaOk, dist: checks.distOk };
+            if (method === "projection") return { ap: checks.apOk, vMag: checks.vMagOk, proj: checks.projLenOk, dist: checks.distOk };
+            return { ap: checks.apOk, vMag: checks.vMagOk, lambda: checks.lamOk, dist: checks.distOk };
+        }, [practiceMode, method, checks]);
+
+        const allCorrect = Object.values(practiceChecks).every(Boolean);
+
+        const newSupportedExample = () => {
+            let idx;
+            do {
+                idx = Math.floor(Math.random() * LINE_EXAMPLES.length);
+            } while (LINE_EXAMPLES.length > 1 && idx === exampleIndex);
+            setExampleIndex(idx);
+            const ex = LINE_EXAMPLES[idx];
+            setP([...ex.P]);
+            setA([...ex.A]);
+            setV([...ex.v]);
+            clearPractice();
+        };
+
+        const reset = () => {
+            setMode("supported");
+            setExampleIndex(0);
+            const ex = LINE_EXAMPLES[0];
+            setP([...ex.P]);
+            setA([...ex.A]);
+            setV([...ex.v]);
+            setForm("vector");
+            setMethod("cross");
+            setTeacherMode(false);
+            setBottomTab("student");
+            setShowWorking(true);
+            setPracticeMode("scaffolded");
+            clearPractice();
+        };
+
+        const apPlaceholder = `${data.AP.map((n) => fmt(n)).join(", ")}`;
 
         return React.createElement("main", { className: "page" },
             React.createElement("section", { className: "hero" },
                 React.createElement("div", null, React.createElement("span", { className: "badge" }, "Specialist Mathematics"), React.createElement("h1", null, "Distance from a Point to a Line in 3D"), React.createElement("p", null, "Compare three methods: cross-product area, projection with Pythagoras, and nearest-point perpendicularity.")),
-                React.createElement("button", { className: "outlineButton", onClick: reset }, "↺ Reset example")
+                React.createElement("div", { className: "buttonRow" },
+                    React.createElement(TeacherModeToggle, {
+                        value: teacherMode,
+                        onChange: (v) => {
+                            setTeacherMode(v);
+                            if (!v) setBottomTab((t) => (t === "teacher" ? "student" : t));
+                        },
+                    }),
+                    React.createElement(ThemeSelect, { id: "line-theme-select" }),
+                    React.createElement("button", { type: "button", className: "outlineButton", onClick: copyShareLink }, "Copy link"),
+                    React.createElement("button", { className: "outlineButton", onClick: reset }, "↺ Reset example"),
+                    copyHint && React.createElement("span", { className: "tiny", style: { alignSelf: "center" } }, copyHint)
+                )
             ),
             React.createElement("section", { className: "mainGrid" },
                 React.createElement("aside", { className: "card inputsCard" },
                     React.createElement("h2", null, "Inputs"),
-                    React.createElement("p", { className: "muted" }, "All methods use the same point, line point, and direction vector."),
-                    React.createElement(NumberTriple, { label: "External point P", values: P, onChange: setP }),
-                    React.createElement(NumberTriple, { label: "Point A on the line", values: A, onChange: setA }),
-                    React.createElement(NumberTriple, { label: "Direction vector v", values: v, onChange: setV }),
+                    React.createElement("p", { className: "muted" }, supported
+                        ? "Supported mode loads preset P, A, and v. Use “New supported example” to rotate examples, or switch to unsupported to type your own."
+                        : "Enter P, a point A on the line, and a non-zero direction v. The diagram and all three methods update together."),
+                    React.createElement("div", { className: "controlGroup" },
+                        React.createElement("label", null, "Mode"),
+                        React.createElement("select", {
+                            value: mode,
+                            onChange: (e) => {
+                                const m = e.target.value;
+                                setMode(m);
+                                setChecked(false);
+                                if (m === "supported") {
+                                    const ex = LINE_EXAMPLES[exampleIndex];
+                                    setP([...ex.P]);
+                                    setA([...ex.A]);
+                                    setV([...ex.v]);
+                                }
+                                clearPractice();
+                            },
+                        },
+                            React.createElement("option", { value: "supported" }, "Supported mode"),
+                            React.createElement("option", { value: "unsupported" }, "Unsupported mode"))
+                    ),
+                    supported && React.createElement("button", { type: "button", className: "primaryButton", onClick: newSupportedExample }, "New supported example"),
+                    React.createElement(NumberTriple, { label: "External point P", values: P, onChange: setP, readOnly: supported }),
+                    React.createElement(NumberTriple, { label: "Point A on the line", values: A, onChange: setA, readOnly: supported }),
+                    React.createElement(NumberTriple, { label: "Direction vector v", values: v, onChange: setV, readOnly: supported }),
                     directionInvalid && React.createElement("p", { className: "error" }, "The direction vector cannot be the zero vector."),
                     React.createElement("div", { className: "representationBox" },
                         React.createElement("h3", null, "Line representation"),
@@ -219,26 +453,235 @@
                 )
             ),
             React.createElement("section", { className: "card lowerCard" },
-                React.createElement("div", { className: "tabs three" },
-                    React.createElement(TabButton, { active: bottomTab === "challenge", onClick: () => setBottomTab("challenge") }, "Student challenge"),
-                    React.createElement(TabButton, { active: bottomTab === "guide", onClick: () => setBottomTab("guide") }, "Teacher guide"),
-                    React.createElement(TabButton, { active: bottomTab === "voiceover", onClick: () => setBottomTab("voiceover") }, "Voice-over draft")
+                React.createElement("div", { className: teacherMode ? "tabs three" : "tabs two" },
+                    React.createElement(TabButton, { active: bottomTab === "student", onClick: () => setBottomTab("student") }, "Student practice"),
+                    React.createElement(TabButton, { active: bottomTab === "howto", onClick: () => setBottomTab("howto") }, "How to use"),
+                    teacherMode && React.createElement(TabButton, { active: bottomTab === "teacher", onClick: () => setBottomTab("teacher") }, "Teacher resources")
                 ),
-                bottomTab === "challenge" && React.createElement("div", { className: "tabContent" },
-                    React.createElement("div", { className: "rowBetween" }, React.createElement("h2", null, "Student challenge"), React.createElement("button", { className: "outlineButton small", onClick: () => setShowChallengeAnswer(!showChallengeAnswer) }, showChallengeAnswer ? "Hide" : "Reveal")),
-                    React.createElement("p", null, "Using the same diagram, explain why all three methods must produce the same distance."),
-                    showChallengeAnswer && React.createElement("p", { className: "note" }, "All three methods isolate the same perpendicular segment. The cross-product method finds it as parallelogram height. The projection method finds it as the leftover perpendicular component after subtracting the parallel part of AP. The nearest-point method finds the point N on the line where PN is perpendicular to the direction vector.")
+                bottomTab === "student" && React.createElement("div", { className: "tabContent" },
+                    React.createElement("div", { className: "rowBetween" },
+                        React.createElement("h2", null, "Student practice"),
+                        React.createElement("div", { className: "buttonRow" },
+                            React.createElement("button", {
+                                type: "button",
+                                className: practiceMode === "scaffolded" ? "pill activePill" : "pill",
+                                onClick: () => { setPracticeMode("scaffolded"); setChecked(false); },
+                            }, "Scaffolded"),
+                            React.createElement("button", {
+                                type: "button",
+                                className: practiceMode === "unscaffolded" ? "pill activePill" : "pill",
+                                onClick: () => { setPracticeMode("unscaffolded"); setChecked(false); },
+                            }, "Unscaffolded"),
+                            React.createElement("button", { type: "button", className: "primaryButton", onClick: () => setChecked(true) }, "Check working"),
+                            React.createElement("button", { type: "button", className: "outlineButton", onClick: clearPractice }, "Clear")
+                        )
+                    ),
+                    React.createElement("p", { className: "muted" }, "Prompts match the method tab selected above (cross product, projection, or nearest point). The diagram and concise working stay visible for reference."),
+                    practiceMode === "unscaffolded"
+                        ? React.createElement(StepInput, {
+                            title: "Perpendicular distance",
+                            prompt: "What is the shortest distance from point P to the line through A with direction v?",
+                            hint: "Enter a decimal; answers within a small tolerance of any of the three methods count as correct.",
+                            value: answers.distance,
+                            onChange: (val) => updateAnswer("distance", val),
+                            placeholder: directionInvalid ? "undefined" : fmt(data.crossDistance),
+                            checked,
+                            correct: checks.distOk,
+                            supported: true,
+                            incorrectMessage: "Compare the distance line in the diagram with the value in the method working (when v ≠ 0 all three methods agree).",
+                        })
+                        : method === "cross"
+                        ? React.createElement(ScaffoldedStepList, {
+                            steps: [
+                                { id: "ap", render: () => React.createElement(StepInput, {
+                                    title: "Step 1: Vector AP",
+                                    prompt: "Compute AP = P − A. Enter the three components separated by commas.",
+                                    hint: "Order is x, y, z. Match the blue vector AP in the diagram and the working panel.",
+                                    value: answers.ap,
+                                    onChange: (val) => updateAnswer("ap", val),
+                                    placeholder: apPlaceholder,
+                                    checked,
+                                    correct: checks.apOk,
+                                    supported: true,
+                                    incorrectMessage: "AP should equal P − A componentwise (small numerical tolerance).",
+                                }) },
+                                { id: "vmag", render: () => React.createElement(StepInput, {
+                                    title: "Step 2: |v|",
+                                    prompt: "What is the magnitude of the direction vector v?",
+                                    hint: "Use a decimal. This is the length of the purple direction segment in the diagram.",
+                                    value: answers.vMag,
+                                    onChange: (val) => updateAnswer("vMag", val),
+                                    placeholder: directionInvalid ? "—" : fmt(data.vMag),
+                                    checked,
+                                    correct: checks.vMagOk,
+                                    supported: true,
+                                    incorrectMessage: "Compare with |v| shown in the cross-product working.",
+                                }) },
+                                { id: "area", render: () => React.createElement(StepInput, {
+                                    title: "Step 3: |AP × v|",
+                                    prompt: "For the cross product method, what is |AP × v|?",
+                                    hint: "This is the area of the parallelogram built from AP and v.",
+                                    value: answers.crossArea,
+                                    onChange: (val) => updateAnswer("crossArea", val),
+                                    placeholder: directionInvalid ? "—" : fmt(data.area),
+                                    checked,
+                                    correct: checks.crossAreaOk,
+                                    supported: true,
+                                    incorrectMessage: "Compare with |AP × v| in the method working.",
+                                }) },
+                                { id: "dist", render: () => React.createElement(StepInput, {
+                                    title: "Step 4: Distance",
+                                    prompt: "Divide the parallelogram area by the base length |v| to get the perpendicular distance.",
+                                    hint: "Same as height of the parallelogram relative to base v.",
+                                    value: answers.distance,
+                                    onChange: (val) => updateAnswer("distance", val),
+                                    placeholder: directionInvalid ? "undefined" : fmt(data.crossDistance),
+                                    checked,
+                                    correct: checks.distOk,
+                                    supported: true,
+                                    incorrectMessage: "Distance = |AP × v| / |v|. Match the decimal answer in the working.",
+                                }) },
+                            ],
+                        })
+                        : method === "projection"
+                        ? React.createElement(ScaffoldedStepList, {
+                            steps: [
+                                { id: "ap", render: () => React.createElement(StepInput, {
+                                    title: "Step 1: Vector AP",
+                                    prompt: "Compute AP = P − A. Enter the three components separated by commas.",
+                                    hint: "Order is x, y, z.",
+                                    value: answers.ap,
+                                    onChange: (val) => updateAnswer("ap", val),
+                                    placeholder: apPlaceholder,
+                                    checked,
+                                    correct: checks.apOk,
+                                    supported: true,
+                                    incorrectMessage: "AP should equal P − A componentwise (small numerical tolerance).",
+                                }) },
+                                { id: "vmag", render: () => React.createElement(StepInput, {
+                                    title: "Step 2: |v|",
+                                    prompt: "What is the magnitude of v?",
+                                    hint: "You need |v| to form the unit vector u = v / |v|.",
+                                    value: answers.vMag,
+                                    onChange: (val) => updateAnswer("vMag", val),
+                                    placeholder: directionInvalid ? "—" : fmt(data.vMag),
+                                    checked,
+                                    correct: checks.vMagOk,
+                                    supported: true,
+                                    incorrectMessage: "Compare with |v| in the projection working.",
+                                }) },
+                                { id: "proj", render: () => React.createElement(StepInput, {
+                                    title: "Step 3: AP · u",
+                                    prompt: "With u = v / |v|, what is the scalar projection length AP · u?",
+                                    hint: "This is the signed length of AP along the line direction.",
+                                    value: answers.projLen,
+                                    onChange: (val) => updateAnswer("projLen", val),
+                                    placeholder: directionInvalid ? "—" : fmt(data.projLength),
+                                    checked,
+                                    correct: checks.projLenOk,
+                                    supported: true,
+                                    incorrectMessage: "Compare with “Projection length” in the method working.",
+                                }) },
+                                { id: "dist", render: () => React.createElement(StepInput, {
+                                    title: "Step 4: Distance",
+                                    prompt: "What is the length of the component of AP perpendicular to the line?",
+                                    hint: "Use Pythagoras: |AP|² = (projection)² + d², or read the perpendicular segment in the diagram.",
+                                    value: answers.distance,
+                                    onChange: (val) => updateAnswer("distance", val),
+                                    placeholder: directionInvalid ? "undefined" : fmt(data.projectionDistance),
+                                    checked,
+                                    correct: checks.distOk,
+                                    supported: true,
+                                    incorrectMessage: "Compare with “Distance =” in the projection working.",
+                                }) },
+                            ],
+                        })
+                        : React.createElement(ScaffoldedStepList, {
+                            steps: [
+                                { id: "ap", render: () => React.createElement(StepInput, {
+                                    title: "Step 1: Vector AP",
+                                    prompt: "Compute AP = P − A. Enter the three components separated by commas.",
+                                    hint: "You will use AP · v and |v|² to find λ.",
+                                    value: answers.ap,
+                                    onChange: (val) => updateAnswer("ap", val),
+                                    placeholder: apPlaceholder,
+                                    checked,
+                                    correct: checks.apOk,
+                                    supported: true,
+                                    incorrectMessage: "AP should equal P − A componentwise (small numerical tolerance).",
+                                }) },
+                                { id: "vmag", render: () => React.createElement(StepInput, {
+                                    title: "Step 2: |v|",
+                                    prompt: "What is |v|? (You need |v|² in the denominator for λ.)",
+                                    hint: "Use a decimal.",
+                                    value: answers.vMag,
+                                    onChange: (val) => updateAnswer("vMag", val),
+                                    placeholder: directionInvalid ? "—" : fmt(data.vMag),
+                                    checked,
+                                    correct: checks.vMagOk,
+                                    supported: true,
+                                    incorrectMessage: "Compare with |v| in the nearest-point working.",
+                                }) },
+                                { id: "lam", render: () => React.createElement(StepInput, {
+                                    title: "Step 3: Parameter λ",
+                                    prompt: "For N = A + λv with PN ⟂ v, λ = (AP · v) / |v|². What is λ?",
+                                    hint: "Use the same λ as in the method working.",
+                                    value: answers.lambda,
+                                    onChange: (val) => updateAnswer("lambda", val),
+                                    placeholder: directionInvalid ? "undefined" : fmt(data.lambdaN),
+                                    checked,
+                                    correct: checks.lamOk,
+                                    supported: true,
+                                    incorrectMessage: "Compare with λ in the nearest-point working.",
+                                }) },
+                                { id: "dist", render: () => React.createElement(StepInput, {
+                                    title: "Step 4: Distance",
+                                    prompt: "What is |PN|, the length from P to the closest point on the line?",
+                                    hint: "N lies on the line with PN perpendicular to v.",
+                                    value: answers.distance,
+                                    onChange: (val) => updateAnswer("distance", val),
+                                    placeholder: directionInvalid ? "undefined" : fmt(data.nearestDistance),
+                                    checked,
+                                    correct: checks.distOk,
+                                    supported: true,
+                                    incorrectMessage: "Compare with “Distance = |PN|” in the nearest-point working.",
+                                }) },
+                            ],
+                        }),
+                    checked && React.createElement(
+                        "p",
+                        { className: allCorrect ? "note correct" : "note incorrect" },
+                        directionInvalid
+                            ? "Set a non-zero direction vector v before checking distances."
+                            : allCorrect
+                            ? "Excellent — your practice answers match this configuration."
+                            : "Some answers need attention. Use the diagram and the method working above."
+                    )
                 ),
-                bottomTab === "guide" && React.createElement("div", { className: "tabContent" },
-                    React.createElement("h2", null, "Short teacher guide"),
+                bottomTab === "howto" && React.createElement("div", { className: "tabContent" },
+                    React.createElement(InstructionsDetails, { title: "How to use this applet", defaultOpen: true },
+                        React.createElement("ul", null,
+                            React.createElement("li", null, React.createElement("strong", null, "Supported mode"), " loads preset triples (P, A, v). Click ", React.createElement("strong", null, "New supported example"), " to try another. Switch to ", React.createElement("strong", null, "Unsupported mode"), " to type your own coordinates."),
+                            React.createElement("li", null, "The large card keeps the ", React.createElement("strong", null, "shared diagram"), " and ", React.createElement("strong", null, "three method tabs"), " so visual structure is always in view."),
+                            React.createElement("li", null, "Under ", React.createElement("strong", null, "Student practice"), ", choose ", React.createElement("strong", null, "Scaffolded"), " for guided prompts tied to the selected method tab, or ", React.createElement("strong", null, "Unscaffolded"), " to enter only the distance."),
+                            React.createElement("li", null, "Use ", React.createElement("strong", null, "Check working"), " after each attempt; ", React.createElement("strong", null, "Clear"), " resets the practice fields only."),
+                            React.createElement("li", null, "Toggle concise working inside each method with ", React.createElement("strong", null, "Hide"), " / ", React.createElement("strong", null, "Show working"), "."),
+                            React.createElement("li", null, "Enable ", React.createElement("strong", null, "Teacher mode"), " for the ", React.createElement("strong", null, "Teacher resources"), " tab."),
+                            React.createElement("li", null, "Use ", React.createElement("strong", null, "Copy link"), " to share mode, example or vectors, practice style, method tab, and more.")
+                        )
+                    )
+                ),
+                teacherMode && bottomTab === "teacher" && React.createElement("div", { className: "tabContent" },
+                    React.createElement("h2", null, "Teacher resources"),
+                    React.createElement("h3", null, "Why the three distances agree"),
+                    React.createElement("p", { className: "note" }, "All three methods isolate the same perpendicular segment from P to the line. The cross-product view sees it as parallelogram height; the projection view subtracts the along-line part of AP; the nearest-point view names the foot N so that PN is orthogonal to v."),
+                    React.createElement("h3", null, "Short teacher guide"),
                     React.createElement("p", null, "Start with the shared ingredients: an external point P, a point A on the line, and a direction vector v."),
                     React.createElement("p", null, "In Method 1, AP and v form a parallelogram. The cross product gives its area, and dividing by |v| gives the perpendicular height."),
                     React.createElement("p", null, "In Method 2, first form the unit vector u in the direction of v. The scalar AP · u gives the signed length of the projection of AP along the line. The remaining component is perpendicular to the line, and its magnitude is the distance."),
                     React.createElement("p", null, "In Method 3, define a general point N on the line using N = A + λv. Since the nearest point occurs where PN is perpendicular to the line, impose PN · v = 0, solve for λ, then calculate |PN|."),
-                    React.createElement("p", { className: "note" }, "Sharing note: once deployed to Vercel, students can access this as a normal webpage link.")
-                ),
-                bottomTab === "voiceover" && React.createElement("div", { className: "tabContent" },
-                    React.createElement("h2", null, "Suggested voice-over draft"),
+                    React.createElement("p", { className: "note" }, "Sharing note: standalone HTML with React and Babel from CDN, like the other demos."),
+                    React.createElement("h3", null, "Suggested voice-over draft"),
                     React.createElement("p", null, "“All three methods start with the same vector AP and the same direction vector v. The blue vector AP connects the line to the point, while the purple vector shows the direction of the line.”"),
                     React.createElement("p", null, "“In the cross-product method, these two vectors form a parallelogram. The magnitude of the cross product gives its area, and dividing by the base length gives the perpendicular height.”"),
                     React.createElement("p", null, "“In the projection method, we turn the direction vector into a unit vector, then project AP onto it. This gives the part of AP running along the line. The leftover component is perpendicular, and its magnitude is the required distance.”"),
