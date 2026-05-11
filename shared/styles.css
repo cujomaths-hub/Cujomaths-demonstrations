@@ -180,6 +180,22 @@ input[type="range"] { width: 100%; accent-color: #2563eb; }
 
 .activePill { background: #0f172a; color: white; }
 
+.toggleButton {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #0f172a;
+}
+
+.toggleButtonActive {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: white;
+}
+
 .outlineButton {
   background: transparent;
   border: 1px solid #cbd5e1;
@@ -241,6 +257,32 @@ input[type="range"] { width: 100%; accent-color: #2563eb; }
   padding: 10px 14px;
   border-radius: 20px;
   margin-top: 14px;
+}
+
+/* Collapsible instruction blocks */
+.details {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 12px 14px;
+}
+
+.detailsSummary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.detailsBody {
+  margin-top: 10px;
+  color: #334155;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.detailsBody ul {
+  margin: 8px 0 0 18px;
+  padding: 0;
 }
 
 /* SVG diagram helpers */

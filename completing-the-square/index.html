@@ -336,7 +336,9 @@
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel">
+  <script type="text/babel" data-type="module">
+    import { InstructionsDetails, TeacherModeToggle } from "../shared/ui/applet-ui.js";
+
     // ----------------------------------------------------------------------
     // 1. Utility functions – fractions and parsing
     // ----------------------------------------------------------------------
@@ -590,6 +592,85 @@
 
     function randomExample() {
       return EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)];
+    }
+
+    function exampleIndex(ex) {
+      return EXAMPLES.findIndex((e) => e.p === ex.p && e.c === ex.c);
+    }
+
+    /** Read applet state from the URL (shareable links on GitHub Pages). */
+    function readUrlState() {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode") === "unsupported" ? "unsupported" : "supported";
+      const practiceMode = params.get("practice") === "unscaffolded" ? "unscaffolded" : "scaffolded";
+      const teacherMode = params.get("teacher") === "1";
+      const showWorking = params.get("demo") !== "0";
+
+      let bottomTab = "practice";
+      const tab = params.get("tab");
+      if (tab === "howto") bottomTab = "howto";
+      else if (tab === "teacher" && teacherMode) bottomTab = "teacher";
+
+      let customP = 6;
+      let customC = 11;
+      let example = EXAMPLES[0];
+
+      const pNum = Number(params.get("p"));
+      const cNum = Number(params.get("c"));
+      const exNum = Number(params.get("ex"));
+
+      if (mode === "supported") {
+        if (Number.isFinite(exNum) && exNum >= 0 && exNum < EXAMPLES.length) {
+          example = EXAMPLES[exNum];
+        } else if (Number.isFinite(pNum) && Number.isFinite(cNum)) {
+          const idx = EXAMPLES.findIndex((e) => e.p === pNum && e.c === cNum);
+          if (idx >= 0) example = EXAMPLES[idx];
+        }
+      } else {
+        if (Number.isFinite(pNum)) customP = pNum;
+        if (Number.isFinite(cNum)) customC = cNum;
+      }
+
+      return {
+        mode,
+        practiceMode,
+        teacherMode,
+        bottomTab,
+        showWorking,
+        example,
+        customP,
+        customC,
+      };
+    }
+
+    /** Build query string for current shareable state (omit defaults where helpful). */
+    function buildUrlSearch({
+      mode,
+      example,
+      customP,
+      customC,
+      practiceMode,
+      teacherMode,
+      bottomTab,
+      showWorking,
+    }) {
+      const params = new URLSearchParams();
+      if (mode === "unsupported") {
+        params.set("mode", "unsupported");
+        params.set("p", String(customP));
+        params.set("c", String(customC));
+      } else {
+        const idx = exampleIndex(example);
+        if (idx >= 0) params.set("ex", String(idx));
+        params.set("p", String(example.p));
+        params.set("c", String(example.c));
+      }
+      if (practiceMode === "unscaffolded") params.set("practice", "unscaffolded");
+      if (teacherMode) params.set("teacher", "1");
+      if (bottomTab === "howto") params.set("tab", "howto");
+      else if (bottomTab === "teacher" && teacherMode) params.set("tab", "teacher");
+      if (!showWorking) params.set("demo", "0");
+      return params.toString();
     }
 
     // ----------------------------------------------------------------------
@@ -859,13 +940,37 @@
     // 7. Main App
     // ----------------------------------------------------------------------
     const App = () => {
-      const [mode, setMode] = React.useState("supported");
-      const [bottomTab, setBottomTab] = React.useState("challenge");
-      const [example, setExample] = React.useState(EXAMPLES[0]);
-      const [customP, setCustomP] = React.useState(6);
-      const [customC, setCustomC] = React.useState(11);
-      const [showWorking, setShowWorking] = React.useState(true);
+      const initialUrl = React.useMemo(() => readUrlState(), []);
+      const [mode, setMode] = React.useState(initialUrl.mode);
+      const [bottomTab, setBottomTab] = React.useState(initialUrl.bottomTab);
+      const [teacherMode, setTeacherMode] = React.useState(initialUrl.teacherMode);
+      const [practiceMode, setPracticeMode] = React.useState(initialUrl.practiceMode); // scaffolded | unscaffolded
+      const [example, setExample] = React.useState(initialUrl.example);
+      const [customP, setCustomP] = React.useState(initialUrl.customP);
+      const [customC, setCustomC] = React.useState(initialUrl.customC);
+      const [showWorking, setShowWorking] = React.useState(initialUrl.showWorking);
       const [checked, setChecked] = React.useState(false);
+      const [copyHint, setCopyHint] = React.useState("");
+      const skipFirstUrlSync = React.useRef(true);
+
+      React.useEffect(() => {
+        if (skipFirstUrlSync.current) {
+          skipFirstUrlSync.current = false;
+          return;
+        }
+        const q = buildUrlSearch({
+          mode,
+          example,
+          customP,
+          customC,
+          practiceMode,
+          teacherMode,
+          bottomTab,
+          showWorking,
+        });
+        const path = q ? `${window.location.pathname}?${q}` : window.location.pathname;
+        window.history.replaceState(null, "", path);
+      }, [mode, example.p, example.c, customP, customC, practiceMode, teacherMode, bottomTab, showWorking]);
       const [answers, setAnswers] = React.useState({
         form: "",
         b: "",
@@ -925,7 +1030,14 @@
               factor: checks.factor,
             };
 
-      const allCorrect = Object.values(relevantChecks).every(Boolean);
+      const practiceChecks =
+        practiceMode === "unscaffolded"
+          ? canFactorFromTurningPoint(p, c) && answers.factor === "yes"
+            ? { final: checks.final, factor: checks.factor, radicand: checks.radicand }
+            : { final: checks.final, factor: checks.factor }
+          : relevantChecks;
+
+      const allCorrect = Object.values(practiceChecks).every(Boolean);
 
       const clear = () => {
         setAnswers({ form: "", b: "", middle: "", fullLine: "", final: "", factor: "", radicand: "" });
@@ -943,13 +1055,37 @@
         setCustomP(6);
         setCustomC(11);
         setShowWorking(true);
-        setBottomTab("challenge");
+        setBottomTab("practice");
+        setPracticeMode("scaffolded");
+        setTeacherMode(false);
         clear();
       };
 
       const newQuestion = () => {
         setExample(randomExample());
         clear();
+      };
+
+      const copyShareLink = async () => {
+        const q = buildUrlSearch({
+          mode,
+          example,
+          customP,
+          customC,
+          practiceMode,
+          teacherMode,
+          bottomTab,
+          showWorking,
+        });
+        const path = q ? `${window.location.pathname}?${q}` : window.location.pathname;
+        const url = `${window.location.origin}${path}`;
+        try {
+          await navigator.clipboard.writeText(url);
+          setCopyHint("Link copied");
+          window.setTimeout(() => setCopyHint(""), 2000);
+        } catch {
+          window.prompt("Copy this link:", url);
+        }
       };
 
       // Demonstration content using fraction display
@@ -1057,9 +1193,27 @@
             )
           ),
           React.createElement(
-            "button",
-            { className: "outlineButton", onClick: reset },
-            "↺ Reset example"
+            "div",
+            { className: "buttonRow" },
+            React.createElement(TeacherModeToggle, {
+              value: teacherMode,
+              onChange: (v) => {
+                setTeacherMode(v);
+                if (!v) setBottomTab((t) => (t === "teacher" ? "practice" : t));
+              },
+            }),
+            React.createElement(
+              "button",
+              { type: "button", className: "outlineButton", onClick: copyShareLink },
+              "Copy link"
+            ),
+            React.createElement(
+              "button",
+              { type: "button", className: "outlineButton", onClick: reset },
+              "↺ Reset example"
+            ),
+            copyHint &&
+              React.createElement("span", { className: "tiny", style: { alignSelf: "center" } }, copyHint)
           )
         ),
         // Main grid
@@ -1183,21 +1337,21 @@
           { className: "card" },
           React.createElement(
             "div",
-            { className: "tabs three" },
+            { className: teacherMode ? "tabs three" : "tabs two" },
             React.createElement(TabButton, {
-              active: bottomTab === "challenge",
-              onClick: () => setBottomTab("challenge"),
+              active: bottomTab === "practice",
+              onClick: () => setBottomTab("practice"),
             }, "Student practice"),
             React.createElement(TabButton, {
-              active: bottomTab === "guide",
-              onClick: () => setBottomTab("guide"),
-            }, "Teacher guide"),
-            React.createElement(TabButton, {
-              active: bottomTab === "voiceover",
-              onClick: () => setBottomTab("voiceover"),
-            }, "Voice-over draft")
+              active: bottomTab === "howto",
+              onClick: () => setBottomTab("howto"),
+            }, "How to use"),
+            teacherMode && React.createElement(TabButton, {
+              active: bottomTab === "teacher",
+              onClick: () => setBottomTab("teacher"),
+            }, "Teacher resources")
           ),
-          bottomTab === "challenge" &&
+          bottomTab === "practice" &&
             React.createElement(
               "div",
               { className: "tabContent" },
@@ -1210,6 +1364,32 @@
                   { className: "buttonRow" },
                   React.createElement(
                     "button",
+                    {
+                      className: practiceMode === "scaffolded" ? "pill activePill" : "pill",
+                      type: "button",
+                      onClick: () => {
+                        setPracticeMode("scaffolded");
+                        setChecked(false);
+                      },
+                      title: "Step-by-step prompts with checks on each line",
+                    },
+                    "Scaffolded"
+                  ),
+                  React.createElement(
+                    "button",
+                    {
+                      className: practiceMode === "unscaffolded" ? "pill activePill" : "pill",
+                      type: "button",
+                      onClick: () => {
+                        setPracticeMode("unscaffolded");
+                        setChecked(false);
+                      },
+                      title: "Fewer prompts (focus on final form)",
+                    },
+                    "Unscaffolded"
+                  ),
+                  React.createElement(
+                    "button",
                     { className: "primaryButton", onClick: () => setChecked(true) },
                     "Check working"
                   ),
@@ -1220,80 +1400,125 @@
                   )
                 )
               ),
-              React.createElement(FormChoice, {
-                value: answers.form,
-                onChange: (v) => updateAnswer("form", v),
-                checked,
-                correct: checks.form,
-                supported,
-              }),
-              React.createElement(StepInput, {
-                title: "Step 2: Identify b",
-                prompt: "To rewrite the middle term, what value should you assign to b?",
-                hint: "Since a = x, b is half the absolute value of the coefficient of x.",
-                value: answers.b,
-                onChange: (v) => updateAnswer("b", v),
-                placeholder: bPlaceholder,
-                checked,
-                correct: checks.b,
-                supported,
-              }),
-              React.createElement(StepInput, {
-                title: "Step 3: Rewrite the middle term",
-                prompt:
-                  "Rewrite the expression, including the constant term, with the middle term in bracketed form 2(x)(b).",
-                hint: "Keep the brackets visible and include the constant term. Do not simplify this line to 6x.",
-                value: answers.middle,
-                onChange: (v) => updateAnswer("middle", v),
-                placeholder: middlePlaceholder,
-                checked,
-                correct: checks.middle,
-                supported,
-                equalsPrefix: `${quadraticText(p, c)} =`,
-              }),
-              React.createElement(StepInput, {
-                title: "Step 4: Add and subtract b²",
-                prompt: "Now add b² and subtract b² in the same line.",
-                hint: "Use the square notation, such as 3², to keep the perfect-square structure visible.",
-                value: answers.fullLine,
-                onChange: (v) => updateAnswer("fullLine", v),
-                placeholder: fullPlaceholder,
-                checked,
-                correct: checks.fullLine,
-                supported,
-                equalsPrefix: `${quadraticText(p, c)} =`,
-              }),
-              React.createElement(StepInput, {
-                title: "Step 5: Turning-point form",
-                prompt: "Write the expression in turning-point form.",
-                hint: "Group the perfect square, then simplify the remaining constants. This is the turning-point form of the quadratic.",
-                value: answers.final,
-                onChange: (v) => updateAnswer("final", v),
-                placeholder: finalPlaceholder,
-                checked,
-                correct: checks.final,
-                supported,
-                equalsPrefix: `${quadraticText(p, c)} =`,
-              }),
-              React.createElement(FactorChoice, {
-                value: answers.factor,
-                onChange: (v) => updateAnswer("factor", v),
-                checked,
-                correct: checks.factor,
-                supported,
-                canFactor: canFactorFromTurningPoint(p, c),
-              }),
-              answers.factor === "yes" &&
-                canFactorFromTurningPoint(p, c) &&
-                React.createElement(RadicandInput, {
-                  value: answers.radicand,
-                  onChange: (v) => updateAnswer("radicand", v),
-                  checked,
-                  correct: checks.radicand,
-                  supported,
-                  p,
-                  c,
-                }),
+              practiceMode === "scaffolded"
+                ? React.createElement(
+                    React.Fragment,
+                    null,
+                    React.createElement(FormChoice, {
+                      value: answers.form,
+                      onChange: (v) => updateAnswer("form", v),
+                      checked,
+                      correct: checks.form,
+                      supported,
+                    }),
+                    React.createElement(StepInput, {
+                      title: "Step 2: Identify b",
+                      prompt: "To rewrite the middle term, what value should you assign to b?",
+                      hint: "Since a = x, b is half the absolute value of the coefficient of x.",
+                      value: answers.b,
+                      onChange: (v) => updateAnswer("b", v),
+                      placeholder: bPlaceholder,
+                      checked,
+                      correct: checks.b,
+                      supported,
+                    }),
+                    React.createElement(StepInput, {
+                      title: "Step 3: Rewrite the middle term",
+                      prompt:
+                        "Rewrite the expression, including the constant term, with the middle term in bracketed form 2(x)(b).",
+                      hint: "Keep the brackets visible and include the constant term. Do not simplify this line to 6x.",
+                      value: answers.middle,
+                      onChange: (v) => updateAnswer("middle", v),
+                      placeholder: middlePlaceholder,
+                      checked,
+                      correct: checks.middle,
+                      supported,
+                      equalsPrefix: `${quadraticText(p, c)} =`,
+                    }),
+                    React.createElement(StepInput, {
+                      title: "Step 4: Add and subtract b²",
+                      prompt: "Now add b² and subtract b² in the same line.",
+                      hint: "Use the square notation, such as 3², to keep the perfect-square structure visible.",
+                      value: answers.fullLine,
+                      onChange: (v) => updateAnswer("fullLine", v),
+                      placeholder: fullPlaceholder,
+                      checked,
+                      correct: checks.fullLine,
+                      supported,
+                      equalsPrefix: `${quadraticText(p, c)} =`,
+                    }),
+                    React.createElement(StepInput, {
+                      title: "Step 5: Turning-point form",
+                      prompt: "Write the expression in turning-point form.",
+                      hint: "Group the perfect square, then simplify the remaining constants. This is the turning-point form of the quadratic.",
+                      value: answers.final,
+                      onChange: (v) => updateAnswer("final", v),
+                      placeholder: finalPlaceholder,
+                      checked,
+                      correct: checks.final,
+                      supported,
+                      equalsPrefix: `${quadraticText(p, c)} =`,
+                    }),
+                    React.createElement(FactorChoice, {
+                      value: answers.factor,
+                      onChange: (v) => updateAnswer("factor", v),
+                      checked,
+                      correct: checks.factor,
+                      supported,
+                      canFactor: canFactorFromTurningPoint(p, c),
+                    }),
+                    answers.factor === "yes" &&
+                      canFactorFromTurningPoint(p, c) &&
+                      React.createElement(RadicandInput, {
+                        value: answers.radicand,
+                        onChange: (v) => updateAnswer("radicand", v),
+                        checked,
+                        correct: checks.radicand,
+                        supported,
+                        p,
+                        c,
+                      })
+                  )
+                : React.createElement(
+                    React.Fragment,
+                    null,
+                    React.createElement(
+                      "p",
+                      { className: "muted" },
+                      "Unscaffolded practice: go straight to turning-point form, then decide whether it factors further."
+                    ),
+                    React.createElement(StepInput, {
+                      title: "Turning-point form",
+                      prompt: "Write the expression in turning-point form.",
+                      hint: "Use (x ± b)² + k with b = half the x coefficient (in magnitude).",
+                      value: answers.final,
+                      onChange: (v) => updateAnswer("final", v),
+                      placeholder: finalPlaceholder,
+                      checked,
+                      correct: checks.final,
+                      supported,
+                      equalsPrefix: `${quadraticText(p, c)} =`,
+                    }),
+                    React.createElement(FactorChoice, {
+                      value: answers.factor,
+                      onChange: (v) => updateAnswer("factor", v),
+                      checked,
+                      correct: checks.factor,
+                      supported,
+                      canFactor: canFactorFromTurningPoint(p, c),
+                    }),
+                    answers.factor === "yes" &&
+                      canFactorFromTurningPoint(p, c) &&
+                      React.createElement(RadicandInput, {
+                        value: answers.radicand,
+                        onChange: (v) => updateAnswer("radicand", v),
+                        checked,
+                        correct: checks.radicand,
+                        supported,
+                        p,
+                        c,
+                      })
+                  ),
               checked &&
                 React.createElement(
                   "p",
@@ -1303,11 +1528,37 @@
                     : "Some steps need attention. Use the feedback above and keep the bracketed 2(x)(b) structure visible."
                 )
             ),
-          bottomTab === "guide" &&
+          bottomTab === "howto" &&
             React.createElement(
               "div",
               { className: "tabContent" },
-              React.createElement("h2", null, "Short teacher guide"),
+              React.createElement(
+                InstructionsDetails,
+                { title: "How to use this applet", defaultOpen: true },
+                React.createElement("ul", null,
+                  React.createElement("li", null, "Choose ", React.createElement("strong", null, "Supported mode"), " to practise with guided examples, or ", React.createElement("strong", null, "Unsupported mode"), " to enter your own ", React.createElement("span", { style: { fontFamily: "monospace" } }, "p"), " and ", React.createElement("span", { style: { fontFamily: "monospace" } }, "c"), "."),
+                  React.createElement("li", null, "Keep the middle term in the bracketed form ", React.createElement("span", { style: { fontFamily: "monospace" } }, "2(x)(b)"), " so the perfect-square pattern stays visible."),
+                  React.createElement("li", null, "Work through the steps, then click ", React.createElement("strong", null, "Check working"), " to get feedback on each line."),
+                  React.createElement("li", null, "Use ", React.createElement("strong", null, "Demonstration"), " above if you need a model solution."),
+                  React.createElement("li", null, "Optional: decide whether you can factor further using difference of two squares (real numbers)."),
+                  React.createElement("li", null, "Use ", React.createElement("strong", null, "Copy link"), " to share the current example and settings; after you change something, the address bar updates to match.")
+                )
+              ),
+              React.createElement(
+                InstructionsDetails,
+                { title: "What this applet checks (important)", defaultOpen: false },
+                React.createElement("ul", null,
+                  React.createElement("li", null, "This applet is designed for ", React.createElement("strong", null, "monic"), " quadratics: ", React.createElement("span", { style: { fontFamily: "monospace" } }, "x² + px + c"), "."),
+                  React.createElement("li", null, "Some checks deliberately expect brackets and square notation to reinforce structure rather than simplification.")
+                )
+              )
+            ),
+          teacherMode && bottomTab === "teacher" &&
+            React.createElement(
+              "div",
+              { className: "tabContent" },
+              React.createElement("h2", null, "Teacher resources"),
+              React.createElement("h3", null, "Short teacher guide"),
               React.createElement(
                 "p",
                 null,
@@ -1322,13 +1573,8 @@
                 "p",
                 { className: "note" },
                 "After turning-point form, students decide whether difference of two squares can complete the factorisation over the real numbers. If it can, they only need to enter the radicand, such as 37/4 for √(37/4), and the factorisation will be displayed with a simplified radical (e.g., √37/2)."
-              )
-            ),
-          bottomTab === "voiceover" &&
-            React.createElement(
-              "div",
-              { className: "tabContent" },
-              React.createElement("h2", null, "Suggested voice-over draft"),
+              ),
+              React.createElement("h3", null, "Suggested voice-over draft (teacher-only)"),
               React.createElement(
                 "p",
                 null,
