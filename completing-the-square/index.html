@@ -500,6 +500,66 @@
       return squareTerm(p) - Number(c);
     }
 
+    // --- LaTeX rendering helpers (display only; checks still use the plain-text helpers) ---
+    function fmtToLatexNumber(s) {
+      s = String(s);
+      if (s === "undefined") return "\\text{undefined}";
+      if (!s.includes("/")) return s;
+      const [n0, d0] = s.split("/");
+      const n = parseInt(n0, 10);
+      const d = parseInt(d0, 10);
+      if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return "\\text{undefined}";
+      return `\\frac{${n}}{${d}}`;
+    }
+
+    function numberLatex(n) {
+      return fmtToLatexNumber(fmt(n));
+    }
+
+    function signedTermLatex(value, variableLatex = "") {
+      const v = Number(value);
+      if (!Number.isFinite(v) || Math.abs(v) < 1e-10) return "";
+      const sign = v < 0 ? " - " : " + ";
+      const abs = Math.abs(v);
+      const coeff = variableLatex && Math.abs(abs - 1) < 1e-10 ? "" : numberLatex(abs);
+      return `${sign}${coeff}${variableLatex}`;
+    }
+
+    function quadraticLatex(p, c) {
+      return `x^{2}${signedTermLatex(p, "x")}${signedTermLatex(c)}`;
+    }
+
+    function powerLatex(n) {
+      const f = fmt(n);
+      if (f.includes("/")) return `\\left(${fmtToLatexNumber(f)}\\right)^{2}`;
+      return `${fmtToLatexNumber(f)}^{2}`;
+    }
+
+    function middleRewriteWithConstantLatex(p, c) {
+      const sign = Number(p) >= 0 ? "+" : "-";
+      return `x^{2} ${sign} 2(x)\\left(${numberLatex(bValue(p))}\\right)${signedTermLatex(Number(c))}`;
+    }
+
+    function addSubtractLineLatex(p, c) {
+      const sign = Number(p) >= 0 ? "+" : "-";
+      const b = bValue(p);
+      return `x^{2} ${sign} 2(x)\\left(${numberLatex(b)}\\right) + ${powerLatex(b)}${signedTermLatex(Number(c))} - ${powerLatex(b)}`;
+    }
+
+    function finalLatex(p, c) {
+      const sign = Number(p) >= 0 ? "+" : "-";
+      const outside = Number(c) - squareTerm(p);
+      return `\\left(x ${sign} ${numberLatex(bValue(p))}\\right)^{2}${signedTermLatex(outside)}`;
+    }
+
+    function factorisationLatex(p, c) {
+      const sign = Number(p) >= 0 ? "+" : "-";
+      const b = numberLatex(bValue(p));
+      const r = simplifySqrtToLatex(radicandValue(p, c));
+      // (x ± b − √r)(x ± b + √r)
+      return `${quadraticLatex(p, c)} = \\left(x ${sign} ${b} - ${r}\\right)\\left(x ${sign} ${b} + ${r}\\right)`;
+    }
+
     // ----------------------------------------------------------------------
     // 3. Acceptance checks (now parse fractions correctly)
     // ----------------------------------------------------------------------
@@ -591,20 +651,11 @@
       );
     };
 
-    // Display a number, using fraction if appropriate
-    const DisplayNum = ({ value }) => {
-      const s = fmt(value);
-      if (s.includes('/')) {
-        const [num, den] = s.split('/');
-        return React.createElement(Frac, { num, den });
-      }
-      return React.createElement(React.Fragment, null, s);
-    };
+    // Display a number (LaTeX, including fractions)
+    const DisplayNum = ({ value }) => React.createElement(Latex, { tex: numberLatex(value) });
 
-    // Display a simplified sqrt expression
-    const SqrtDisplay = ({ radicand }) => {
-      return React.createElement(Latex, { tex: simplifySqrtToLatex(radicand) });
-    };
+    // Display a simplified sqrt expression (LaTeX)
+    const SqrtDisplay = ({ radicand }) => React.createElement(Latex, { tex: simplifySqrtToLatex(radicand) });
 
     // ----------------------------------------------------------------------
     // 5. Examples
@@ -940,20 +991,7 @@
         React.createElement(
           "div",
           { className: "factorPreview" },
-          quadraticText(p, c),
-          " = (x ",
-          sign,
-          " ",
-          React.createElement(DisplayNum, { value: b }),
-          " − ",
-          React.createElement(SqrtDisplay, { radicand: radicandVal }),
-          ")(x ",
-          sign,
-          " ",
-          React.createElement(DisplayNum, { value: b }),
-          " + ",
-          React.createElement(SqrtDisplay, { radicand: radicandVal }),
-          ")"
+          React.createElement(Latex, { tex: factorisationLatex(p, c) })
         ),
         checked &&
           React.createElement(
@@ -1122,28 +1160,16 @@
       const demonstration = React.createElement(
         "div",
         { className: "working" },
-        React.createElement("p", null, "Expression: ", quadraticText(p, c)),
-        React.createElement("p", null, "Perfect-square form: ", formText(p)),
+        React.createElement("p", null, "Expression: ", React.createElement(Latex, { tex: quadraticLatex(p, c) })),
+        React.createElement("p", null, "Perfect-square form: ", React.createElement(Latex, { tex: Number(p) >= 0 ? "a^{2} + 2ab + b^{2}" : "a^{2} - 2ab + b^{2}" })),
+        React.createElement("p", null, React.createElement(Latex, { tex: `${quadraticLatex(p, c)} = ${middleRewriteWithConstantLatex(p, c)}` })),
+        React.createElement("p", null, React.createElement(Latex, { tex: `${quadraticLatex(p, c)} = ${addSubtractLineLatex(p, c)}` })),
         React.createElement(
           "p",
           null,
-          quadraticText(p, c),
-          " = ",
-          middleRewriteWithConstant(p, c)
-        ),
-        React.createElement(
-          "p",
-          null,
-          quadraticText(p, c),
-          " = ",
-          addSubtractLine(p, c)
-        ),
-        React.createElement(
-          "p",
-          null,
-          quadraticText(p, c),
-          " = ",
-          React.createElement("span", { className: "answer" }, finalText(p, c))
+          React.createElement(Latex, { tex: `${quadraticLatex(p, c)} =` }),
+          " ",
+          React.createElement("span", { className: "answer" }, React.createElement(Latex, { tex: finalLatex(p, c) }))
         ),
         React.createElement(
           "p",
@@ -1154,23 +1180,7 @@
                 React.Fragment,
                 null,
                 "Yes: ",
-                React.createElement(
-                  "span",
-                  { className: "answer" },
-                  "(x ",
-                  sign,
-                  " ",
-                  React.createElement(DisplayNum, { value: b }),
-                  " − ",
-                  React.createElement(SqrtDisplay, { radicand: radicandValue(p, c) }),
-                  ")(x ",
-                  sign,
-                  " ",
-                  React.createElement(DisplayNum, { value: b }),
-                  " + ",
-                  React.createElement(SqrtDisplay, { radicand: radicandValue(p, c) }),
-                  ")"
-                )
+                React.createElement("span", { className: "answer" }, React.createElement(Latex, { tex: factorisationLatex(p, c) }))
               )
             : React.createElement("span", { className: "answer" }, "Does not factor further over the real numbers.")
         )
@@ -1184,23 +1194,15 @@
         React.createElement(
           "div",
           { className: "summaryGrid" },
-          React.createElement(
-            "div",
-            { className: "summaryBox" },
-            "b = ",
-            React.createElement(DisplayNum, { value: b })
-          ),
-          React.createElement(
-            "div",
-            { className: "summaryBox" },
-            "b² = ",
-            React.createElement(DisplayNum, { value: b2 })
-          )
+          React.createElement("div", { className: "summaryBox" }, React.createElement(Latex, { tex: `b = ${numberLatex(b)}` })),
+          React.createElement("div", { className: "summaryBox" }, React.createElement(Latex, { tex: `b^{2} = ${numberLatex(b2)}` }))
         ),
         React.createElement(
           "p",
           { className: "tiny" },
-          "The applet is designed for monic quadratics: x² + px + c."
+          "The applet is designed for monic quadratics: ",
+          React.createElement(Latex, { tex: "x^{2} + px + c" }),
+          "."
         )
       );
 
@@ -1318,7 +1320,7 @@
                 { className: "primaryButton", onClick: newQuestion },
                 "New supported example"
               ),
-            React.createElement("div", { className: "expressionBox" }, quadraticText(p, c)),
+            React.createElement("div", { className: "expressionBox" }, React.createElement(Latex, { tex: quadraticLatex(p, c) })),
             React.createElement("div", { className: "representationBox" }, keyValues)
           ),
           // Right column: method demonstration card
