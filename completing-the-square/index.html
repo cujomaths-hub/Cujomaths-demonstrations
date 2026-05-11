@@ -9,6 +9,8 @@
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js">
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="../shared/styles.css" />
   <style>
     .page {
@@ -376,29 +378,66 @@
       return den === 0 ? NaN : num / den;
     }
 
-    // Simplify √(value) for display: returns an object describing the simplest form
-    function simplifySqrt(value) {
-      const str = fmt(value); // e.g. "37/4"
-      const parts = str.split('/');
-      if (parts.length === 2) {
-        const num = parseInt(parts[0], 10);
-        const den = parseInt(parts[1], 10);
-        const sqrtDen = Math.sqrt(den);
-        if (Number.isInteger(sqrtDen)) {
-          // denominator is perfect square
-          return { numerator: `√${num}`, denominator: String(sqrtDen), isFraction: true };
+    function squareFreeFactor(n) {
+      n = Math.abs(Number(n));
+      if (!Number.isFinite(n) || !Number.isInteger(n)) return { outside: 1, inside: n };
+      if (n === 0) return { outside: 0, inside: 1 };
+      if (n === 1) return { outside: 1, inside: 1 };
+      let outside = 1;
+      let inside = n;
+      for (let p = 2; p * p <= inside; p++) {
+        const sq = p * p;
+        while (inside % sq === 0) {
+          outside *= p;
+          inside = inside / sq;
         }
-        // can't simplify nicely
-        return { radical: `√(${str})`, isFraction: false };
-      } else {
-        const n = Number(str);
-        const sqrtN = Math.sqrt(n);
-        if (Number.isInteger(sqrtN)) {
-          return { radical: String(sqrtN), isFraction: false };
-        }
-        return { radical: `√${str}`, isFraction: false };
       }
+      return { outside, inside };
     }
+
+    function simplifySqrtToLatex(value) {
+      const str = fmt(value); // e.g. "37/4"
+      if (str === "undefined") return "\\text{undefined}";
+      if (str === "0") return "0";
+
+      const parts = str.split("/");
+      const num = parseInt(parts[0], 10);
+      const den = parts.length === 2 ? parseInt(parts[1], 10) : 1;
+      if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) return "\\text{undefined}";
+
+      // Handle negative radicand (shouldn't happen here, but keep it safe)
+      if (num < 0) return `\\sqrt{${str}}`;
+
+      const denSqrt = Math.sqrt(den);
+      if (!Number.isInteger(denSqrt)) {
+        // Uncommon for this applet; fall back to sqrt of the fraction.
+        return `\\sqrt{\\frac{${num}}{${den}}}`;
+      }
+
+      const { outside: outN, inside: inN } = squareFreeFactor(num);
+      const outD = denSqrt;
+
+      // sqrt(1) -> 1, sqrt(0) -> 0
+      if (inN === 1) {
+        const whole = outN / outD;
+        if (Number.isInteger(whole)) return String(whole);
+        return `\\frac{${outN}}{${outD}}`;
+      }
+
+      const outsideLatex =
+        outN === 1 && outD === 1 ? "" : outD === 1 ? String(outN) : `\\frac{${outN}}{${outD}}`;
+      const radicalLatex = `\\sqrt{${inN}}`;
+      return outsideLatex ? `${outsideLatex}${radicalLatex}` : radicalLatex;
+    }
+    const Latex = ({ tex }) => {
+      try {
+        const html = katex.renderToString(tex, { throwOnError: false, displayMode: false });
+        return React.createElement("span", { dangerouslySetInnerHTML: { __html: html } });
+      } catch {
+        return React.createElement("span", null, tex);
+      }
+    };
+
 
     // ----------------------------------------------------------------------
     // 2. Expression helpers
@@ -564,15 +603,7 @@
 
     // Display a simplified sqrt expression
     const SqrtDisplay = ({ radicand }) => {
-      const simplified = simplifySqrt(radicand);
-      if (simplified.isFraction) {
-        return React.createElement(
-          React.Fragment,
-          null,
-          React.createElement(Frac, { num: simplified.numerator, den: simplified.denominator })
-        );
-      }
-      return React.createElement(React.Fragment, null, simplified.radical);
+      return React.createElement(Latex, { tex: simplifySqrtToLatex(radicand) });
     };
 
     // ----------------------------------------------------------------------
@@ -866,7 +897,6 @@
       const b = bValue(p);
       const sign = Number(p) >= 0 ? "+" : "−";
       const radicandVal = radicandValue(p, c);
-      const simplified = simplifySqrt(radicandVal);
       return React.createElement(
         "div",
         { className: "stepCard" },
