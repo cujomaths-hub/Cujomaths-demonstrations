@@ -1,83 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Cujomaths Demos | Specialist Mathematics</title>
-    <link rel="stylesheet" href="shared/styles.css" />
-    <style>
-        body {
-            font-family: system-ui, sans-serif;
-            max-width: 800px;
-            margin: 60px auto;
-            padding: 0 20px;
-            background: #f8fafc;
-        }
-        h1 { color: #0f172a; }
-        .demo-card {
-            background: white;
-            border-radius: 20px;
-            padding: 20px 24px;
-            margin: 20px 0;
-            border: 1px solid #e2e8f0;
-            transition: 0.1s;
-        }
-        .demo-card:hover { border-color: #94a3b8; }
-        a { text-decoration: none; color: #1e293b; }
-        .demo-title { font-size: 1.3rem; font-weight: 600; margin: 0 0 8px 0; color: #0f172a; }
-        .demo-desc { margin: 0; color: #475569; }
-        .badge {
-            background: #eef2ff;
-            color: #1e40af;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 500;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cujomaths Demos | Specialist Mathematics</title>
+  <script>
+    (function () {
+      try {
+        var k = "cujomaths-theme";
+        var v = localStorage.getItem(k);
+        if (v !== "light" && v !== "dark" && v !== "system") v = "system";
+        var d = "light";
+        if (v === "dark") d = "dark";
+        else if (v === "light") d = "light";
+        else d = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = d;
+        document.documentElement.dataset.themeSetting = v;
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="shared/styles.css" />
 </head>
-<body>
-    <h1>📐 Specialist Mathematics Demonstrations</h1>
-    <p>Interactive 3D geometry and vector applets for classroom use.</p>
-
-    <!-- Existing demo: Point to Line Distance -->
-    <div class="demo-card">
-        <a href="shortest distance from a point to a line/">
-            <h2 class="demo-title">📏 Point to Line Distance in 3D</h2>
-            <p class="demo-desc">Compare three methods: cross product, projection, and nearest point.</p>
-            <span class="badge">Vectors</span> <span class="badge">3D Geometry</span>
-        </a>
+<body class="landing">
+  <div class="landingTop">
+    <div>
+      <h1>📐 Specialist Mathematics Demonstrations</h1>
+      <p>Interactive 3D geometry and vector applets for classroom use.</p>
     </div>
+    <label class="themeSelectWrap" for="root-theme-select">
+      <span class="tiny">Theme</span>
+      <select id="root-theme-select" aria-label="Colour theme">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </label>
+  </div>
 
-    <!-- NEW APPLET: Distance from a Point to a Plane -->
-    <div class="demo-card">
-        <a href="distance-from-point-to-plane/">
-            <h2 class="demo-title">📐 Distance from a Point to a Plane</h2>
-            <p class="demo-desc">Perpendicular distance, closest point on plane, and visualisation.</p>
-            <span class="badge">Vectors</span> <span class="badge">3D Geometry</span> <span class="badge">Planes</span>
-        </a>
-    </div>
+  <div class="demo-card">
+    <a href="shortest distance from a point to a line/">
+      <h2 class="demo-title">📏 Point to Line Distance in 3D</h2>
+      <p class="demo-desc">Compare three methods: cross product, projection, and nearest point.</p>
+      <span class="badge">Vectors</span> <span class="badge">3D Geometry</span>
+    </a>
+  </div>
 
-    <!-- NEW APPLET: Completing the square -->
-    <div class="demo-card">
-        <a href="completing-the-square/">
-            <h2 class="demo-title">📐 Completing the square</h2>
-            <p class="demo-desc">Reasoning and steps behind completing the square.</p>
-            <span class="badge">Algebra</span> <span class="badge">Quadratics</span> <span class="badge">Factorisation</span>
-        </a>
-    </div>
-    
-    <!-- More demos go here when you create them -->
-    <!--
-        <div class="demo-card">
-            <a href="vector-dot-product/">
-                <h2 class="demo-title">⚫ Dot Product Visualiser</h2>
-                <p class="demo-desc">Explore projection and angle between vectors.</p>
-                <span class="badge">Vectors</span>
-            </a>
-        </div>
-        -->
+  <div class="demo-card">
+    <a href="distance-from-point-to-plane/">
+      <h2 class="demo-title">📐 Distance from a Point to a Plane</h2>
+      <p class="demo-desc">Perpendicular distance, closest point on plane, and visualisation.</p>
+      <span class="badge">Vectors</span> <span class="badge">3D Geometry</span> <span class="badge">Planes</span>
+    </a>
+  </div>
 
-    <p style="margin-top: 40px; font-size: 0.8rem; color: #64748b;">
-        Created by Cujomaths - E.L.E.
-    </p>
+  <div class="demo-card">
+    <a href="completing-the-square/">
+      <h2 class="demo-title">📐 Completing the square</h2>
+      <p class="demo-desc">Reasoning and steps behind completing the square.</p>
+      <span class="badge">Algebra</span> <span class="badge">Quadratics</span> <span class="badge">Factorisation</span>
+    </a>
+  </div>
+
+  <p class="landingFooter">Created by Cujomaths - E.L.E.</p>
+
+  <script type="module">
+    import {
+      initThemeFromStorage,
+      applyThemeSetting,
+      attachSystemThemeListener,
+      getStoredThemeSetting,
+    } from "./shared/ui/theme.js";
+
+    initThemeFromStorage();
+    attachSystemThemeListener(() => {});
+
+    const sel = document.getElementById("root-theme-select");
+    if (sel) {
+      sel.value = getStoredThemeSetting();
+      sel.addEventListener("change", () => applyThemeSetting(sel.value));
+    }
+  </script>
 </body>
 </html>
