@@ -4,6 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Completing the Square Demonstrator | Mathematics</title>
+  <script>
+    (function () {
+      try {
+        var k = "cujomaths-theme";
+        var v = localStorage.getItem(k);
+        if (v !== "light" && v !== "dark" && v !== "system") v = "system";
+        var d = "light";
+        if (v === "dark") d = "dark";
+        else if (v === "light") d = "light";
+        else d = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = d;
+        document.documentElement.dataset.themeSetting = v;
+      } catch (e) {}
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js">
   </script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js">
@@ -13,334 +28,13 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="../shared/styles.css" />
-  <style>
-    .page {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .mainGrid {
-      display: grid;
-      grid-template-columns: 330px 1fr;
-      gap: 28px;
-      margin-bottom: 32px;
-    }
-
-    @media (max-width: 900px) {
-      .mainGrid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .card {
-      background: white;
-      border-radius: 24px;
-      border: 1px solid #e2e8f0;
-      padding: 20px 24px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-    }
-
-    .inputsCard {
-      align-self: start;
-    }
-
-    .methodCard {
-      padding: 0;
-      overflow: hidden;
-    }
-
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid #e2e8f0;
-      background: #fefefe;
-    }
-
-    .tabs.two button,
-    .tabs.three button {
-      flex: 1;
-    }
-
-    .tab {
-      background: transparent;
-      border: none;
-      padding: 14px 12px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: #475569;
-      cursor: pointer;
-      transition: 0.1s;
-    }
-
-    .tab.active {
-      color: #0f172a;
-      border-bottom: 2px solid #3b82f6;
-      background: #fafcff;
-    }
-
-    .methodGrid {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      padding: 20px 24px 24px 24px;
-    }
-
-    .inputGroup {
-      margin-bottom: 20px;
-    }
-
-    .inputGroup label,
-    .controlGroup label {
-      font-weight: 600;
-      font-size: 0.85rem;
-      display: block;
-      margin-bottom: 8px;
-      color: #1e293b;
-    }
-
-    .pair {
-      display: flex;
-      gap: 12px;
-    }
-
-    .pair input,
-    select,
-    .studentInput {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 16px;
-      font-size: 0.9rem;
-      font-family: monospace;
-      background: #ffffff;
-      color: #0f172a;
-    }
-
-    .controlGroup {
-      margin-bottom: 20px;
-    }
-
-    .representationBox {
-      background: #f1f5f9;
-      border-radius: 20px;
-      padding: 12px 16px;
-      margin: 16px 0 8px;
-    }
-
-    .rowBetween {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .buttonRow {
-      display: flex;
-      gap: 8px;
-      margin: 12px 0;
-      flex-wrap: wrap;
-    }
-
-    .outlineButton {
-      background: transparent;
-      border: 1px solid #cbd5e1;
-      padding: 6px 14px;
-      border-radius: 40px;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .primaryButton {
-      background: #0f172a;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 40px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
-    .muted {
-      color: #475569;
-      font-size: 0.85rem;
-    }
-
-    .tiny {
-      font-size: 0.7rem;
-      color: #5b6e8c;
-    }
-
-    .expressionBox {
-      background: #e6f0ff;
-      border-radius: 20px;
-      padding: 18px;
-      text-align: center;
-      font-family: monospace;
-      font-size: 1.6rem;
-      font-weight: 700;
-      margin: 16px 0;
-    }
-
-    .working {
-      background: #f8fafc;
-      border-radius: 20px;
-      padding: 12px 16px;
-      font-family: monospace;
-      font-size: 0.95rem;
-      margin: 12px 0;
-      overflow-x: auto;
-      line-height: 2;
-    }
-
-    .answer {
-      font-weight: 700;
-      background: #e6f0ff;
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 20px;
-    }
-
-    .note {
-      font-size: 0.8rem;
-      background: #fef9e3;
-      padding: 10px 14px;
-      border-radius: 20px;
-      margin-top: 14px;
-    }
-
-    .stepCard {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 20px;
-      padding: 14px 16px;
-      margin-bottom: 12px;
-    }
-
-    .stepHeader {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-    }
-
-    .stepHeader h3 {
-      margin: 0 0 6px 0;
-      font-size: 1rem;
-    }
-
-    .feedback {
-      font-size: 0.8rem;
-      margin-top: 8px;
-    }
-
-    .correct {
-      color: #047857;
-      font-weight: 600;
-    }
-
-    .incorrect {
-      color: #b91c1c;
-      font-weight: 600;
-    }
-
-    .tabContent {
-      padding: 20px 0 8px;
-    }
-
-    .summaryGrid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    @media (max-width: 520px) {
-      .summaryGrid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .summaryBox {
-      background: #f1f5f9;
-      border-radius: 18px;
-      padding: 10px 12px;
-      font-family: monospace;
-      font-size: 0.8rem;
-    }
-
-    .choiceRow {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-
-    .choiceButton {
-      background: white;
-      border: 1px solid #cbd5e1;
-      padding: 8px 14px;
-      border-radius: 999px;
-      font-family: monospace;
-      cursor: pointer;
-    }
-
-    .choiceButton.selected {
-      background: #0f172a;
-      color: white;
-      border-color: #0f172a;
-    }
-
-    .equationInputRow {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 10px;
-      align-items: center;
-      margin-top: 10px;
-    }
-
-    .equalsPrefix {
-      font-family: monospace;
-      font-weight: 700;
-      color: #334155;
-      white-space: nowrap;
-    }
-
-    .factorPreview {
-      font-family: monospace;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 10px 12px;
-      margin-top: 10px;
-      overflow-x: auto;
-    }
-
-    /* Stacked fraction styling */
-    .frac {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      vertical-align: middle;
-      font-size: 0.9em;
-      margin: 0 0.15em;
-    }
-
-    .frac>span:first-child {
-      border-bottom: 1px solid currentColor;
-      padding-bottom: 1px;
-      line-height: 1;
-    }
-
-    .frac>span:last-child {
-      padding-top: 1px;
-      line-height: 1;
-    }
-  </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel" data-type="module">
-    import { InstructionsDetails, TeacherModeToggle } from "../shared/ui/applet-ui.js";
+    import { InstructionsDetails, TeacherModeToggle, ThemeSelect } from "../shared/ui/applet-ui.js";
+    import { readCompletingTheSquareState, buildCompletingTheSquareQuery, replaceHistoryQuery } from "../shared/ui/url-state.js";
+    import { StepInput, ScaffoldedStepList } from "../shared/ui/scaffold-steps.js";
     import { Latex } from "../shared/ui/latex.js";
     import { createCompletingTheSquareLatexDisplay } from "../shared/math/latexCompletingTheSquareDisplay.js";
 
@@ -548,150 +242,11 @@
       return EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)];
     }
 
-    function exampleIndex(ex) {
-      return EXAMPLES.findIndex((e) => e.p === ex.p && e.c === ex.c);
-    }
-
-    /** Read applet state from the URL (shareable links on GitHub Pages). */
-    function readUrlState() {
-      const params = new URLSearchParams(window.location.search);
-      const mode = params.get("mode") === "unsupported" ? "unsupported" : "supported";
-      const practiceMode = params.get("practice") === "unscaffolded" ? "unscaffolded" : "scaffolded";
-      const teacherMode = params.get("teacher") === "1";
-      const showWorking = params.get("demo") !== "0";
-
-      let bottomTab = "practice";
-      const tab = params.get("tab");
-      if (tab === "howto") bottomTab = "howto";
-      else if (tab === "teacher" && teacherMode) bottomTab = "teacher";
-
-      let customP = 6;
-      let customC = 11;
-      let example = EXAMPLES[0];
-
-      const pNum = Number(params.get("p"));
-      const cNum = Number(params.get("c"));
-      const exNum = Number(params.get("ex"));
-
-      if (mode === "supported") {
-        if (Number.isFinite(exNum) && exNum >= 0 && exNum < EXAMPLES.length) {
-          example = EXAMPLES[exNum];
-        } else if (Number.isFinite(pNum) && Number.isFinite(cNum)) {
-          const idx = EXAMPLES.findIndex((e) => e.p === pNum && e.c === cNum);
-          if (idx >= 0) example = EXAMPLES[idx];
-        }
-      } else {
-        if (Number.isFinite(pNum)) customP = pNum;
-        if (Number.isFinite(cNum)) customC = cNum;
-      }
-
-      return {
-        mode,
-        practiceMode,
-        teacherMode,
-        bottomTab,
-        showWorking,
-        example,
-        customP,
-        customC,
-      };
-    }
-
-    /** Build query string for current shareable state (omit defaults where helpful). */
-    function buildUrlSearch({
-      mode,
-      example,
-      customP,
-      customC,
-      practiceMode,
-      teacherMode,
-      bottomTab,
-      showWorking,
-    }) {
-      const params = new URLSearchParams();
-      if (mode === "unsupported") {
-        params.set("mode", "unsupported");
-        params.set("p", String(customP));
-        params.set("c", String(customC));
-      } else {
-        const idx = exampleIndex(example);
-        if (idx >= 0) params.set("ex", String(idx));
-        params.set("p", String(example.p));
-        params.set("c", String(example.c));
-      }
-      if (practiceMode === "unscaffolded") params.set("practice", "unscaffolded");
-      if (teacherMode) params.set("teacher", "1");
-      if (bottomTab === "howto") params.set("tab", "howto");
-      else if (bottomTab === "teacher" && teacherMode) params.set("tab", "teacher");
-      if (!showWorking) params.set("demo", "0");
-      return params.toString();
-    }
-
     // ----------------------------------------------------------------------
     // 6. Sub‑components for practice
     // ----------------------------------------------------------------------
     const TabButton = ({ active, onClick, children }) =>
       React.createElement("button", { className: active ? "tab active" : "tab", onClick }, children);
-
-    const StepInput = ({
-      title,
-      prompt,
-      hint,
-      value,
-      onChange,
-      placeholder,
-      checked,
-      correct,
-      supported,
-      equalsPrefix = "",
-    }) =>
-      React.createElement(
-        "div",
-        { className: "stepCard" },
-        React.createElement(
-          "div",
-          { className: "stepHeader" },
-          React.createElement(
-            "div",
-            null,
-            React.createElement("h3", null, title),
-            React.createElement("p", { className: "muted" }, supported ? prompt : title)
-          ),
-          checked &&
-            React.createElement(
-              "span",
-              { className: correct ? "correct" : "incorrect" },
-              correct ? "✓" : "✗"
-            )
-        ),
-        supported && React.createElement("p", { className: "tiny" }, hint),
-        equalsPrefix
-          ? React.createElement(
-              "div",
-              { className: "equationInputRow" },
-              React.createElement("span", { className: "equalsPrefix" }, equalsPrefix),
-              React.createElement("input", {
-                className: "studentInput",
-                value,
-                placeholder,
-                onChange: (e) => onChange(e.target.value),
-              })
-            )
-          : React.createElement("input", {
-              className: "studentInput",
-              value,
-              placeholder,
-              onChange: (e) => onChange(e.target.value),
-            }),
-        checked &&
-          React.createElement(
-            "p",
-            { className: correct ? "feedback correct" : "feedback incorrect" },
-            correct
-              ? "Correct."
-              : "Check this line carefully. Follow the bracketed pattern shown in the demonstration."
-          )
-      );
 
     const FormChoice = ({ value, onChange, checked, correct, supported }) => {
       const options = ["a² + 2ab + b²", "a² − 2ab + b²"];
@@ -880,7 +435,10 @@
     // 7. Main App
     // ----------------------------------------------------------------------
     const App = () => {
-      const initialUrl = React.useMemo(() => readUrlState(), []);
+      const initialUrl = React.useMemo(
+        () => readCompletingTheSquareState(window.location.search, EXAMPLES),
+        []
+      );
       const [mode, setMode] = React.useState(initialUrl.mode);
       const [bottomTab, setBottomTab] = React.useState(initialUrl.bottomTab);
       const [teacherMode, setTeacherMode] = React.useState(initialUrl.teacherMode);
@@ -898,18 +456,20 @@
           skipFirstUrlSync.current = false;
           return;
         }
-        const q = buildUrlSearch({
-          mode,
-          example,
-          customP,
-          customC,
-          practiceMode,
-          teacherMode,
-          bottomTab,
-          showWorking,
-        });
-        const path = q ? `${window.location.pathname}?${q}` : window.location.pathname;
-        window.history.replaceState(null, "", path);
+        const q = buildCompletingTheSquareQuery(
+          {
+            mode,
+            example,
+            customP,
+            customC,
+            practiceMode,
+            teacherMode,
+            bottomTab,
+            showWorking,
+          },
+          EXAMPLES
+        );
+        replaceHistoryQuery(q);
       }, [mode, example.p, example.c, customP, customC, practiceMode, teacherMode, bottomTab, showWorking]);
       const [answers, setAnswers] = React.useState({
         form: "",
@@ -1007,16 +567,19 @@
       };
 
       const copyShareLink = async () => {
-        const q = buildUrlSearch({
-          mode,
-          example,
-          customP,
-          customC,
-          practiceMode,
-          teacherMode,
-          bottomTab,
-          showWorking,
-        });
+        const q = buildCompletingTheSquareQuery(
+          {
+            mode,
+            example,
+            customP,
+            customC,
+            practiceMode,
+            teacherMode,
+            bottomTab,
+            showWorking,
+          },
+          EXAMPLES
+        );
         const path = q ? `${window.location.pathname}?${q}` : window.location.pathname;
         const url = `${window.location.origin}${path}`;
         try {
@@ -1106,6 +669,7 @@
                 if (!v) setBottomTab((t) => (t === "teacher" ? "practice" : t));
               },
             }),
+            React.createElement(ThemeSelect, { id: "cts-theme-select" }),
             React.createElement(
               "button",
               { type: "button", className: "outlineButton", onClick: copyShareLink },
@@ -1123,7 +687,7 @@
         // Main grid
         React.createElement(
           "section",
-          { className: "mainGrid" },
+          { className: "mainGrid ctsGrid" },
           // Left column: inputs
           React.createElement(
             "aside",
@@ -1305,84 +869,111 @@
                 )
               ),
               practiceMode === "scaffolded"
-                ? React.createElement(
-                    React.Fragment,
-                    null,
-                    React.createElement(FormChoice, {
-                      value: answers.form,
-                      onChange: (v) => updateAnswer("form", v),
-                      checked,
-                      correct: checks.form,
-                      supported,
-                    }),
-                    React.createElement(StepInput, {
-                      title: "Step 2: Identify b",
-                      prompt: "To rewrite the middle term, what value should you assign to b?",
-                      hint: "Since a = x, b is half the absolute value of the coefficient of x.",
-                      value: answers.b,
-                      onChange: (v) => updateAnswer("b", v),
-                      placeholder: bPlaceholder,
-                      checked,
-                      correct: checks.b,
-                      supported,
-                    }),
-                    React.createElement(StepInput, {
-                      title: "Step 3: Rewrite the middle term",
-                      prompt:
-                        "Rewrite the expression, including the constant term, with the middle term in bracketed form 2(x)(b).",
-                      hint: "Keep the brackets visible and include the constant term. Do not simplify this line to 6x.",
-                      value: answers.middle,
-                      onChange: (v) => updateAnswer("middle", v),
-                      placeholder: middlePlaceholder,
-                      checked,
-                      correct: checks.middle,
-                      supported,
-                      equalsPrefix: `${quadraticText(p, c)} =`,
-                    }),
-                    React.createElement(StepInput, {
-                      title: "Step 4: Add and subtract b²",
-                      prompt: "Now add b² and subtract b² in the same line.",
-                      hint: "Use the square notation, such as 3², to keep the perfect-square structure visible.",
-                      value: answers.fullLine,
-                      onChange: (v) => updateAnswer("fullLine", v),
-                      placeholder: fullPlaceholder,
-                      checked,
-                      correct: checks.fullLine,
-                      supported,
-                      equalsPrefix: `${quadraticText(p, c)} =`,
-                    }),
-                    React.createElement(StepInput, {
-                      title: "Step 5: Turning-point form",
-                      prompt: "Write the expression in turning-point form.",
-                      hint: "Group the perfect square, then simplify the remaining constants. This is the turning-point form of the quadratic.",
-                      value: answers.final,
-                      onChange: (v) => updateAnswer("final", v),
-                      placeholder: finalPlaceholder,
-                      checked,
-                      correct: checks.final,
-                      supported,
-                      equalsPrefix: `${quadraticText(p, c)} =`,
-                    }),
-                    React.createElement(FactorChoice, {
-                      value: answers.factor,
-                      onChange: (v) => updateAnswer("factor", v),
-                      checked,
-                      correct: checks.factor,
-                      supported,
-                      canFactor: canFactorFromTurningPoint(p, c),
-                    }),
-                    answers.factor === "yes" &&
-                      canFactorFromTurningPoint(p, c) &&
-                      React.createElement(RadicandInput, {
-                        value: answers.radicand,
-                        onChange: (v) => updateAnswer("radicand", v),
-                        checked,
-                        correct: checks.radicand,
-                        supported,
-                        p,
-                        c,
-                      })
-                  )
+                ? React.createElement(ScaffoldedStepList, {
+                    steps: [
+                      {
+                        id: "form",
+                        render: () =>
+                          React.createElement(FormChoice, {
+                            value: answers.form,
+                            onChange: (v) => updateAnswer("form", v),
+                            checked,
+                            correct: checks.form,
+                            supported,
+                          }),
+                      },
+                      {
+                        id: "b",
+                        render: () =>
+                          React.createElement(StepInput, {
+                            title: "Step 2: Identify b",
+                            prompt: "To rewrite the middle term, what value should you assign to b?",
+                            hint: "Since a = x, b is half the absolute value of the coefficient of x.",
+                            value: answers.b,
+                            onChange: (v) => updateAnswer("b", v),
+                            placeholder: bPlaceholder,
+                            checked,
+                            correct: checks.b,
+                            supported,
+                          }),
+                      },
+                      {
+                        id: "middle",
+                        render: () =>
+                          React.createElement(StepInput, {
+                            title: "Step 3: Rewrite the middle term",
+                            prompt:
+                              "Rewrite the expression, including the constant term, with the middle term in bracketed form 2(x)(b).",
+                            hint: "Keep the brackets visible and include the constant term. Do not simplify this line to 6x.",
+                            value: answers.middle,
+                            onChange: (v) => updateAnswer("middle", v),
+                            placeholder: middlePlaceholder,
+                            checked,
+                            correct: checks.middle,
+                            supported,
+                            equalsPrefix: `${quadraticText(p, c)} =`,
+                          }),
+                      },
+                      {
+                        id: "fullLine",
+                        render: () =>
+                          React.createElement(StepInput, {
+                            title: "Step 4: Add and subtract b²",
+                            prompt: "Now add b² and subtract b² in the same line.",
+                            hint: "Use the square notation, such as 3², to keep the perfect-square structure visible.",
+                            value: answers.fullLine,
+                            onChange: (v) => updateAnswer("fullLine", v),
+                            placeholder: fullPlaceholder,
+                            checked,
+                            correct: checks.fullLine,
+                            supported,
+                            equalsPrefix: `${quadraticText(p, c)} =`,
+                          }),
+                      },
+                      {
+                        id: "final",
+                        render: () =>
+                          React.createElement(StepInput, {
+                            title: "Step 5: Turning-point form",
+                            prompt: "Write the expression in turning-point form.",
+                            hint: "Group the perfect square, then simplify the remaining constants. This is the turning-point form of the quadratic.",
+                            value: answers.final,
+                            onChange: (v) => updateAnswer("final", v),
+                            placeholder: finalPlaceholder,
+                            checked,
+                            correct: checks.final,
+                            supported,
+                            equalsPrefix: `${quadraticText(p, c)} =`,
+                          }),
+                      },
+                      {
+                        id: "factor",
+                        render: () =>
+                          React.createElement(FactorChoice, {
+                            value: answers.factor,
+                            onChange: (v) => updateAnswer("factor", v),
+                            checked,
+                            correct: checks.factor,
+                            supported,
+                            canFactor: canFactorFromTurningPoint(p, c),
+                          }),
+                      },
+                      {
+                        id: "radicand",
+                        when: () => answers.factor === "yes" && canFactorFromTurningPoint(p, c),
+                        render: () =>
+                          React.createElement(RadicandInput, {
+                            value: answers.radicand,
+                            onChange: (v) => updateAnswer("radicand", v),
+                            checked,
+                            correct: checks.radicand,
+                            supported,
+                            p,
+                            c,
+                          }),
+                      },
+                    ],
+                  })
                 : React.createElement(
                     React.Fragment,
                     null,
