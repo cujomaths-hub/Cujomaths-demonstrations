@@ -1,6 +1,12 @@
 // Shared UI components for CDN-React + Babel applets.
 // These components assume React is available globally (window.React).
 
+import {
+  getStoredThemeSetting,
+  applyThemeSetting,
+  attachSystemThemeListener,
+} from "./theme.js";
+
 const React = window.React;
 
 export function InstructionsDetails({
@@ -27,6 +33,34 @@ export function TeacherModeToggle({ value, onChange }) {
       title: "Show/hide teacher resources on this page",
     },
     value ? "Teacher mode: On" : "Teacher mode: Off"
+  );
+}
+
+/** Light / dark / follow system. Persists in localStorage (see theme.js). */
+export function ThemeSelect({ id = "cujomaths-theme-select" } = {}) {
+  const [mode, setMode] = React.useState(() => getStoredThemeSetting());
+  React.useEffect(() => {
+    applyThemeSetting(mode);
+  }, [mode]);
+  React.useEffect(() => {
+    return attachSystemThemeListener(() => {});
+  }, []);
+  return React.createElement(
+    "label",
+    { className: "themeSelectWrap", htmlFor: id },
+    React.createElement("span", { className: "tiny" }, "Theme"),
+    React.createElement(
+      "select",
+      {
+        id,
+        value: mode,
+        onChange: (e) => setMode(e.target.value),
+        "aria-label": "Colour theme",
+      },
+      React.createElement("option", { value: "system" }, "System"),
+      React.createElement("option", { value: "light" }, "Light"),
+      React.createElement("option", { value: "dark" }, "Dark")
+    )
   );
 }
 
