@@ -402,3 +402,203 @@ export function buildPointToLineQuery(state, examples) {
   if (!showWorking) params.set("demo", "0");
   return params.toString();
 }
+
+// --- Sketch parabola: standard form y = ax² + bx + c (params: mode, ex, a, b, c, practice, teacher, tab, demo) ---
+
+/**
+ * @param {string} search
+ * @param {Array<{ a: number, b: number, c: number }>} examples
+ */
+export function readParabolaStandardState(search, examples) {
+  const list =
+    examples && examples.length
+      ? examples
+      : [
+          { a: 1, b: -4, c: 3 },
+          { a: -1, b: -2, c: 3 },
+        ];
+  const params = getSearchParams(search);
+  const teacherMode = params.get("teacher") === "1";
+  let bottomTab = "student";
+  const tab = params.get("tab");
+  if (tab === "howto") bottomTab = "howto";
+  else if (tab === "teacher" && teacherMode) bottomTab = "teacher";
+
+  const showWorking = params.get("demo") !== "0";
+  const practiceMode =
+    params.get("practice") === "unscaffolded" ? "unscaffolded" : "scaffolded";
+  const dataMode = params.get("mode") === "unsupported" ? "unsupported" : "supported";
+
+  let exampleIndex = 0;
+  const out = {
+    teacherMode,
+    bottomTab,
+    showWorking,
+    practiceMode,
+    dataMode,
+    exampleIndex,
+    a: list[0].a,
+    b: list[0].b,
+    c: list[0].c,
+  };
+
+  if (dataMode === "supported") {
+    const exNum = Number(params.get("ex"));
+    if (Number.isFinite(exNum) && exNum >= 0 && exNum < list.length) {
+      exampleIndex = exNum;
+      out.exampleIndex = exNum;
+      const ex = list[exNum];
+      out.a = ex.a;
+      out.b = ex.b;
+      out.c = ex.c;
+    } else {
+      const ex = list[0];
+      out.a = ex.a;
+      out.b = ex.b;
+      out.c = ex.c;
+    }
+  } else {
+    const pa = Number(params.get("a"));
+    const pb = Number(params.get("b"));
+    const pc = Number(params.get("c"));
+    if (Number.isFinite(pa)) out.a = pa;
+    if (Number.isFinite(pb)) out.b = pb;
+    if (Number.isFinite(pc)) out.c = pc;
+  }
+
+  return out;
+}
+
+/**
+ * @param {object} state
+ * @param {Array<{ a: number, b: number, c: number }>} examples
+ */
+export function buildParabolaStandardQuery(state, examples) {
+  const list = examples && examples.length ? examples : [];
+  const {
+    teacherMode,
+    bottomTab,
+    showWorking,
+    practiceMode,
+    dataMode,
+    a,
+    b,
+    c,
+  } = state;
+  const params = new URLSearchParams();
+  if (dataMode === "unsupported") {
+    params.set("mode", "unsupported");
+    params.set("a", String(a));
+    params.set("b", String(b));
+    params.set("c", String(c));
+  } else if (list.length) {
+    const idx = list.findIndex((e) => e.a === a && e.b === b && e.c === c);
+    if (idx >= 0) params.set("ex", String(idx));
+  }
+  if (practiceMode === "unscaffolded") params.set("practice", "unscaffolded");
+  if (teacherMode) params.set("teacher", "1");
+  if (bottomTab === "howto") params.set("tab", "howto");
+  else if (bottomTab === "teacher" && teacherMode) params.set("tab", "teacher");
+  if (!showWorking) params.set("demo", "0");
+  return params.toString();
+}
+
+// --- Sketch parabola: vertex form y = a(x−h)² + k (params: mode, ex, a, h, k, practice, teacher, tab, demo) ---
+
+/**
+ * @param {string} search
+ * @param {Array<{ a: number, h: number, k: number }>} examples
+ */
+export function readParabolaVertexState(search, examples) {
+  const list =
+    examples && examples.length
+      ? examples
+      : [
+          { a: 2, h: 1, k: -3 },
+          { a: -0.5, h: -2, k: 4 },
+        ];
+  const params = getSearchParams(search);
+  const teacherMode = params.get("teacher") === "1";
+  let bottomTab = "student";
+  const tab = params.get("tab");
+  if (tab === "howto") bottomTab = "howto";
+  else if (tab === "teacher" && teacherMode) bottomTab = "teacher";
+
+  const showWorking = params.get("demo") !== "0";
+  const practiceMode =
+    params.get("practice") === "unscaffolded" ? "unscaffolded" : "scaffolded";
+  const dataMode = params.get("mode") === "unsupported" ? "unsupported" : "supported";
+
+  let exampleIndex = 0;
+  const out = {
+    teacherMode,
+    bottomTab,
+    showWorking,
+    practiceMode,
+    dataMode,
+    exampleIndex,
+    a: list[0].a,
+    h: list[0].h,
+    k: list[0].k,
+  };
+
+  if (dataMode === "supported") {
+    const exNum = Number(params.get("ex"));
+    if (Number.isFinite(exNum) && exNum >= 0 && exNum < list.length) {
+      exampleIndex = exNum;
+      out.exampleIndex = exNum;
+      const ex = list[exNum];
+      out.a = ex.a;
+      out.h = ex.h;
+      out.k = ex.k;
+    } else {
+      const ex = list[0];
+      out.a = ex.a;
+      out.h = ex.h;
+      out.k = ex.k;
+    }
+  } else {
+    const pa = Number(params.get("a"));
+    const ph = Number(params.get("h"));
+    const pk = Number(params.get("k"));
+    if (Number.isFinite(pa)) out.a = pa;
+    if (Number.isFinite(ph)) out.h = ph;
+    if (Number.isFinite(pk)) out.k = pk;
+  }
+
+  return out;
+}
+
+/**
+ * @param {object} state
+ * @param {Array<{ a: number, h: number, k: number }>} examples
+ */
+export function buildParabolaVertexQuery(state, examples) {
+  const list = examples && examples.length ? examples : [];
+  const {
+    teacherMode,
+    bottomTab,
+    showWorking,
+    practiceMode,
+    dataMode,
+    a,
+    h,
+    k,
+  } = state;
+  const params = new URLSearchParams();
+  if (dataMode === "unsupported") {
+    params.set("mode", "unsupported");
+    params.set("a", String(a));
+    params.set("h", String(h));
+    params.set("k", String(k));
+  } else if (list.length) {
+    const idx = list.findIndex((e) => e.a === a && e.h === h && e.k === k);
+    if (idx >= 0) params.set("ex", String(idx));
+  }
+  if (practiceMode === "unscaffolded") params.set("practice", "unscaffolded");
+  if (teacherMode) params.set("teacher", "1");
+  if (bottomTab === "howto") params.set("tab", "howto");
+  else if (bottomTab === "teacher" && teacherMode) params.set("tab", "teacher");
+  if (!showWorking) params.set("demo", "0");
+  return params.toString();
+}

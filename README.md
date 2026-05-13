@@ -29,6 +29,8 @@ KaTeX (where used) picks up text colour via `.katex { color: var(--cm-katex); }`
 - **Completing the square:** `readCompletingTheSquareState(search, EXAMPLES)` and `buildCompletingTheSquareQuery(state, EXAMPLES)` — `mode`, `p`, `c`, `ex`, `practice`, `teacher`, `tab`, `demo`.
 - **Point to plane:** `readPointToPlaneState(search, PLANE_EXAMPLES)` / `buildPointToPlaneQuery(state, PLANE_EXAMPLES)` — `mode` (`unsupported` with `pdef`, `abcd`, `pp`, `nv`, `tA`–`tC`, `P`, `rx`, `ry`), `ex` (supported example index when geometry matches a preset), `practice` (`unscaffolded`), plus `teacher`, `tab`, `method`, `demo` as on the line page.
 - **Point to line:** `readPointToLineState(search, LINE_EXAMPLES)` / `buildPointToLineQuery(state, LINE_EXAMPLES)` — `mode` (`unsupported` with `P`, `A`, `v` as comma triplets), `ex` (supported example index), `practice` (`unscaffolded`), plus `teacher`, `tab`, `method`, `form`, `demo` as before.
+- **Parabola standard form:** `readParabolaStandardState` / `buildParabolaStandardQuery` — `mode` (`unsupported` with `a`, `b`, `c`), `ex` when the triple matches a preset, plus `practice`, `teacher`, `tab`, `demo`.
+- **Parabola turning-point form:** `readParabolaVertexState` / `buildParabolaVertexQuery` — `mode` (`unsupported` with `a`, `h`, `k`), `ex` when the triple matches a preset, plus `practice`, `teacher`, `tab`, `demo`.
 
 Use `replaceHistoryQuery(queryString)` after state changes (skip the first effect pass if you mirror the completing-the-square pattern with a ref) so the address bar stays shareable. Plain pages can combine this with a **Copy link** button.
 
