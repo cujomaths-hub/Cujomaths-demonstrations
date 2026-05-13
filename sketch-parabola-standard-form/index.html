@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Sketching Parabolas (Standard Form) | Specialist Mathematics</title>
+  <script>
+    (function () {
+      try {
+        var k = "cujomaths-theme";
+        var v = localStorage.getItem(k);
+        if (v !== "light" && v !== "dark" && v !== "system") v = "system";
+        var d = "light";
+        if (v === "dark") d = "dark";
+        else if (v === "light") d = "light";
+        else d = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = d;
+        document.documentElement.dataset.themeSetting = v;
+      } catch (e) {}
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="../shared/styles.css" />
+  <style>
+    .parabolaGrid { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.2fr); gap: 16px; align-items: start; }
+    @media (max-width: 900px) { .parabolaGrid { grid-template-columns: 1fr; } }
+    .parabolaSvg { width: 100%; max-width: 480px; height: auto; background: var(--cm-card-bg); border-radius: 8px; border: 1px solid var(--cm-border); }
+    .inputsCard input:read-only { background: var(--cm-representation-bg); cursor: default; }
+    .shapeRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .shapeRow button { min-width: 100px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-type="module">
+    import { fmt } from "../shared/math/format.js";
+    import { InstructionsDetails, TeacherModeToggle, ThemeSelect } from "../shared/ui/applet-ui.js";
+    import {
+      readParabolaStandardState,
+      buildParabolaStandardQuery,
+      replaceHistoryQuery,
+    } from "../shared/ui/url-state.js";
+    import { StepInput, ScaffoldedStepList } from "../shared/ui/scaffold-steps.js";
+    import { Latex } from "../shared/ui/latex.js";
+
+    const STANDARD_EXAMPLES = [
+      { a: 1, b: -4, c: 3 },
+      { a: -1, b: -2, c: 3 },
+      { a: 1, b: 0, c: -4 },
+      { a: 1, b: -2, c: 1 },
+      { a: 1, b: 0, c: 1 },
+      { a: 2, b: -4, c: 1 },
+    ];
+
+    function evalStd(a, b, c, x) {
+      return a * x * x + b * x + c;
+    }
+
+    function vertexStd(a, b, c) {
+      if (Math.abs(a) < 1e-12) return null;
+      const xv = -b / (2 * a);
+      return { x: xv, y: evalStd(a, b, c, xv) };
+    }
+
+    function rootsStd(a, b, c) {
+      if (Math.abs(a) < 1e-12) return { kind: "none", roots: [] };
+      const D = b * b - 4 * a * c;
+      if (D < -1e-9) return { kind: "none", roots: [] };
+      if (Math.abs(D) < 1e-9) return { kind: "one", roots: [-b / (2 * a)] };
+      const s = Math.sqrt(D);
+      const r1 = (-b - s) / (2 * a);
+      const r2 = (-b + s) / (2 * a);
+      return { kind: "two", roots: [Math.min(r1, r2), Math.max(r1, r2)] };
+    }
+
+    function numClose(u, v, rel = 1e-4) {
+      if (!Number.isFinite(u) || !Number.isFinite(v)) return false;
+      return Math.abs(u - v) <= rel * (1 + Math.abs(v)) || Math.abs(u - v) < 1e-8;
+    }
+
+    function texNum(n) {
+      if (!Number.isFinite(n)) return "?";
+      const s = fmt(n, 4);
+      if (/^-?\d+$/.test(s)) return s;
+      return `\\text{${s}}`;
+    }
+
+    function quadEqLatex(a, b, c) {
+      let t = "y = ";
+      const ax = Math.abs(a) < 1e-9 ? 0 : a;
+      if (Math.abs(ax) < 1e-9) return "y \\text{ (not a quadratic)}";
+      if (Math.abs(ax - 1) < 1e-9) t += "x^{2}";
+      else if (Math.abs(ax + 1) < 1e-9) t += "-x^{2}";
+      else t += `${texNum(ax)}x^{2}`;
+      if (Math.abs(b) > 1e-9) {
+        const sign = b > 0 ? "+" : "-";
+        const ab = Math.abs(b);
+        if (Math.abs(ab - 1) < 1e-9) t += ` ${sign} x`;
+        else t += ` ${sign} ${texNum(ab)}x`;
+      }
+      if (Math.abs(c) > 1e-9) {
+        const sign = c > 0 ? "+" : "-";
+        t += ` ${sign} ${texNum(Math.abs(c))}`;
+      }
+      return t;
+    }
+
+    function parseRootsAnswer(str, expected) {
+      const s = String(str).trim().toLowerCase();
+      if (expected.length === 0) {
+        return s === "" || s === "none" || s === "no" || s === "n/a" || s === "na";
+      }
+      if (expected.length === 1) {
+        const n = Number(s);
+        return Number.isFinite(n) && numClose(n, expected[0]);
+      }
+      const parts = s.split(/[,;\s]+/).filter(Boolean).map(Number);
+      if (parts.length !== 2 || !parts.every(Number.isFinite)) return false;
+      const sorted = [...parts].sort((p, q) => p - q);
+      return numClose(sorted[0], expected[0]) && numClose(sorted[1], expected[1]);
+    }
+
+    function plotBounds(a, b, c, vx, vy, roots, y0) {
+      const xs = [0, vx, ...roots].filter((x) => Number.isFinite(x));
+      const ys = [y0, vy, 0].filter((y) => Number.isFinite(y));
+      let minX = Math.min(-5, ...xs.map((x) => x - 1));
+      let maxX = Math.max(5, ...xs.map((x) => x + 1));
+      let minY = Math.min(-5, ...ys.map((y) => y - 1));
+      let maxY = Math.max(5, ...ys.map((y) => y + 1));
+      if (Math.abs(maxX - minX) < 2) { minX -= 1; maxX += 1; }
+      if (Math.abs(maxY - minY) < 2) { minY -= 1; maxY += 1; }
+      return { minX, maxX, minY, maxY };
+    }
+
+    function ParabolaPlot({ a, b, c }) {
+      const W = 420;
+      const H = 340;
+      const pad = 28;
+      const invalid = Math.abs(a) < 1e-12;
+      const v = invalid ? null : vertexStd(a, b, c);
+      const r = invalid ? { kind: "none", roots: [] } : rootsStd(a, b, c);
+      const y0 = invalid ? NaN : c;
+      const roots = r.roots || [];
+      const bounds = invalid
+        ? { minX: -5, maxX: 5, minY: -5, maxY: 5 }
+        : plotBounds(a, b, c, v.x, v.y, roots, y0);
+      const { minX, maxX, minY, maxY } = bounds;
+      const sx = (x) => pad + ((x - minX) / (maxX - minX || 1)) * (W - 2 * pad);
+      const sy = (y) => H - pad - ((y - minY) / (maxY - minY || 1)) * (H - 2 * pad);
+
+      const pathPts = [];
+      if (!invalid) {
+        const steps = 120;
+        for (let i = 0; i <= steps; i++) {
+          const x = minX + (i / steps) * (maxX - minX);
+          const y = evalStd(a, b, c, x);
+          if (!Number.isFinite(y) || Math.abs(y) > 1e4) continue;
+          pathPts.push({ x: sx(x), y: sy(y) });
+        }
+      }
+      const dPath = pathPts.length
+        ? pathPts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ")
+        : "";
+
+      const mark = (x, y, fill, label) => {
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+        const px = sx(x);
+        const py = sy(y);
+        if (px < pad - 5 || px > W - pad + 5 || py < pad - 5 || py > H - pad + 5) return null;
+        return React.createElement(
+          React.Fragment,
+          { key: label },
+          React.createElement("circle", { cx: px, cy: py, r: 5, fill }),
+          React.createElement("text", { x: px + 8, y: py - 6, fontSize: 11, fill: "var(--cm-muted)" }, label)
+        );
+      };
+
+      return React.createElement(
+        "div",
+        { className: "diagramCard" },
+        React.createElement("h3", { className: "cardTitle" }, "Graph sketch"),
+        invalid
+          ? React.createElement("p", { className: "error" }, "Set a ≠ 0 to show a parabola.")
+          : React.createElement(
+              "svg",
+              { viewBox: `0 0 ${W} ${H}`, className: "parabolaSvg", role: "img", "aria-label": "Parabola plot" },
+              React.createElement("rect", { x: 0, y: 0, width: W, height: H, fill: "transparent" }),
+              React.createElement("line", {
+                x1: sx(minX),
+                y1: sy(0),
+                x2: sx(maxX),
+                y2: sy(0),
+                stroke: "var(--cm-border)",
+                strokeWidth: 1,
+              }),
+              React.createElement("line", {
+                x1: sx(0),
+                y1: sy(minY),
+                x2: sx(0),
+                y2: sy(maxY),
+                stroke: "var(--cm-border)",
+                strokeWidth: 1,
+              }),
+              dPath &&
+                React.createElement("path", {
+                  d: dPath,
+                  fill: "none",
+                  stroke: "var(--cm-accent, #2563eb)",
+                  strokeWidth: 2.5,
+                }),
+              Number.isFinite(v.x) &&
+                React.createElement("line", {
+                  x1: sx(v.x),
+                  y1: sy(minY),
+                  x2: sx(v.x),
+                  y2: sy(maxY),
+                  stroke: "var(--cm-muted)",
+                  strokeDasharray: "6 4",
+                  strokeWidth: 1,
+                }),
+              mark(0, y0, "#f97316", "(0, c)"),
+              r.kind === "one" && mark(roots[0], 0, "#059669", "x-int"),
+              r.kind === "two" &&
+                React.createElement(React.Fragment, null,
+                  mark(roots[0], 0, "#059669", "x₁"),
+                  mark(roots[1], 0, "#059669", "x₂")),
+              v && mark(v.x, v.y, "#7c3aed", "TP")
+            )
+      );
+    }
+
+    const TabButton = ({ active, onClick, children }) =>
+      React.createElement("button", { type: "button", className: active ? "tab active" : "tab", onClick }, children);
+
+    const ShapePick = ({ value, onChange }) =>
+      React.createElement(
+        "div",
+        { className: "controlGroup" },
+        React.createElement("label", null, "Shape (practice)"),
+        React.createElement(
+          "div",
+          { className: "shapeRow" },
+          React.createElement(
+            "button",
+            {
+              type: "button",
+              className: value === "happy" ? "pill activePill" : "pill",
+              onClick: () => onChange("happy"),
+            },
+            "Happy (a > 0)"
+          ),
+          React.createElement(
+            "button",
+            {
+              type: "button",
+              className: value === "sad" ? "pill activePill" : "pill",
+              onClick: () => onChange("sad"),
+            },
+            "Sad (a < 0)"
+          )
+        )
+      );
+
+    const App = () => {
+      const initialUrl = React.useMemo(
+        () => readParabolaStandardState(window.location.search, STANDARD_EXAMPLES),
+        []
+      );
+      const [dataMode, setDataMode] = React.useState(initialUrl.dataMode);
+      const [exampleIndex, setExampleIndex] = React.useState(initialUrl.exampleIndex);
+      const [a, setA] = React.useState(initialUrl.a);
+      const [b, setB] = React.useState(initialUrl.b);
+      const [c, setC] = React.useState(initialUrl.c);
+      const [teacherMode, setTeacherMode] = React.useState(initialUrl.teacherMode);
+      const [bottomTab, setBottomTab] = React.useState(initialUrl.bottomTab);
+      const [showWorking, setShowWorking] = React.useState(initialUrl.showWorking);
+      const [practiceMode, setPracticeMode] = React.useState(initialUrl.practiceMode);
+      const [answers, setAnswers] = React.useState({
+        shape: "",
+        yint: "",
+        xtp: "",
+        ytp: "",
+        roots: "",
+        vertexPair: "",
+      });
+      const [checked, setChecked] = React.useState(false);
+      const [copyHint, setCopyHint] = React.useState("");
+      const skipFirstUrlSync = React.useRef(true);
+
+      const supported = dataMode === "supported";
+      const invalidA = Math.abs(a) < 1e-12;
+      const v = invalidA ? null : vertexStd(a, b, c);
+      const r = invalidA ? { kind: "none", roots: [] } : rootsStd(a, b, c);
+      const D = b * b - 4 * a * c;
+
+      const urlPayload = () => ({
+        teacherMode,
+        bottomTab,
+        showWorking,
+        practiceMode,
+        dataMode,
+        a,
+        b,
+        c,
+      });
+
+      React.useEffect(() => {
+        if (skipFirstUrlSync.current) {
+          skipFirstUrlSync.current = false;
+          return;
+        }
+        replaceHistoryQuery(buildParabolaStandardQuery(urlPayload(), STANDARD_EXAMPLES));
+      }, [teacherMode, bottomTab, showWorking, practiceMode, dataMode, a, b, c]);
+
+      const copyShareLink = async () => {
+        const q = buildParabolaStandardQuery(urlPayload(), STANDARD_EXAMPLES);
+        const path = q ? `${window.location.pathname}?${q}` : window.location.pathname;
+        const url = `${window.location.origin}${path}`;
+        try {
+          await navigator.clipboard.writeText(url);
+          setCopyHint("Link copied");
+          window.setTimeout(() => setCopyHint(""), 2000);
+        } catch {
+          window.prompt("Copy this link:", url);
+        }
+      };
+
+      const applyEx = (i) => {
+        const ex = STANDARD_EXAMPLES[i];
+        setA(ex.a);
+        setB(ex.b);
+        setC(ex.c);
+      };
+
+      const newExample = () => {
+        let idx;
+        do {
+          idx = Math.floor(Math.random() * STANDARD_EXAMPLES.length);
+        } while (STANDARD_EXAMPLES.length > 1 && idx === exampleIndex);
+        setExampleIndex(idx);
+        applyEx(idx);
+        clearPractice();
+      };
+
+      const reset = () => {
+        setDataMode("supported");
+        setExampleIndex(0);
+        applyEx(0);
+        setTeacherMode(false);
+        setBottomTab("student");
+        setShowWorking(true);
+        setPracticeMode("scaffolded");
+        clearPractice();
+      };
+
+      function clearPractice() {
+        setAnswers({ shape: "", yint: "", xtp: "", ytp: "", roots: "", vertexPair: "" });
+        setChecked(false);
+      }
+
+      const updateAnswer = (key, val) => {
+        setAnswers((prev) => ({ ...prev, [key]: val }));
+        setChecked(false);
+      };
+
+      const expectedShape = a > 0 ? "happy" : "sad";
+      const checks = React.useMemo(() => {
+        const r0 = rootsStd(a, b, c);
+        const v0 = vertexStd(a, b, c);
+        const shapeOk = answers.shape === expectedShape;
+        const yintOk = numClose(Number(String(answers.yint).trim()), c);
+        const xtpOk = v0 && numClose(Number(String(answers.xtp).trim()), v0.x);
+        const ytpOk = v0 && numClose(Number(String(answers.ytp).trim()), v0.y);
+        const rootsOk = parseRootsAnswer(answers.roots, r0.roots);
+        const parts = String(answers.vertexPair)
+          .split(",")
+          .map((s) => Number(String(s).trim()))
+          .filter((n) => Number.isFinite(n));
+        const vertexPairOk =
+          !!v0 && parts.length === 2 && numClose(parts[0], v0.x) && numClose(parts[1], v0.y);
+        return { shapeOk, yintOk, xtpOk, ytpOk, rootsOk, vertexPairOk };
+      }, [answers, a, b, c, expectedShape]);
+
+      const practiceChecks =
+        practiceMode === "unscaffolded"
+          ? { vertexPairOk: checks.vertexPairOk }
+          : { shapeOk: checks.shapeOk, yintOk: checks.yintOk, xtpOk: checks.xtpOk, ytpOk: checks.ytpOk, rootsOk: checks.rootsOk };
+
+      const allCorrect = Object.values(practiceChecks).every(Boolean);
+
+      const rootsPlaceholder = () => {
+        if (invalidA) return "—";
+        if (r.kind === "none") return "none";
+        if (r.kind === "one") return fmt(r.roots[0], 4);
+        return `${fmt(r.roots[0], 4)}, ${fmt(r.roots[1], 4)}`;
+      };
+
+      return React.createElement(
+        "main",
+        { className: "page" },
+        React.createElement(
+          "section",
+          { className: "hero" },
+          React.createElement(
+            "div",
+            null,
+            React.createElement("span", { className: "badge" }, "Specialist Mathematics"),
+            React.createElement("h1", null, "Sketching parabolas — standard form"),
+            React.createElement(
+              "p",
+              null,
+              "Work from ",
+              React.createElement("Latex", { tex: "y = ax^{2} + bx + c" }),
+              " to identify shape, intercepts, and turning point, then match the sketch."
+            )
+          ),
+          React.createElement(
+            "div",
+            { className: "buttonRow" },
+            React.createElement(TeacherModeToggle, {
+              value: teacherMode,
+              onChange: (v) => {
+                setTeacherMode(v);
+                if (!v) setBottomTab((t) => (t === "teacher" ? "student" : t));
+              },
+            }),
+            React.createElement(ThemeSelect, { id: "parabola-std-theme" }),
+            React.createElement("button", { type: "button", className: "outlineButton", onClick: copyShareLink }, "Copy link"),
+            React.createElement("button", { type: "button", className: "outlineButton", onClick: reset }, "↺ Reset"),
+            copyHint && React.createElement("span", { className: "tiny", style: { alignSelf: "center" } }, copyHint)
+          )
+        ),
+        React.createElement(
+          "section",
+          { className: "parabolaGrid" },
+          React.createElement(
+            "aside",
+            { className: "card inputsCard" },
+            React.createElement("h2", null, "Equation"),
+            React.createElement("p", { className: "muted" }, supported
+              ? "Supported mode loads preset quadratics. Use “New supported example” or switch to unsupported to type your own a, b, c."
+              : "Edit a, b, and c. Keep a ≠ 0 for a parabola."),
+            React.createElement(
+              "div",
+              { className: "controlGroup" },
+              React.createElement("label", null, "Geometry"),
+              React.createElement(
+                "select",
+                {
+                  value: dataMode,
+                  onChange: (e) => {
+                    const m = e.target.value;
+                    setDataMode(m);
+                    setChecked(false);
+                    if (m === "supported") applyEx(exampleIndex);
+                    clearPractice();
+                  },
+                },
+                React.createElement("option", { value: "supported" }, "Supported geometry"),
+                React.createElement("option", { value: "unsupported" }, "Unsupported geometry")
+              )
+            ),
+            supported &&
+              React.createElement(
+                "button",
+                { type: "button", className: "primaryButton", onClick: newExample },
+                "New supported example"
+              ),
+            React.createElement(
+              "div",
+              { className: "inputGroup" },
+              React.createElement("label", null, "Coefficients a, b, c"),
+              React.createElement(
+                "div",
+                { className: "triple" },
+                ["a", "b", "c"].map((label, i) => {
+                  const vals = [a, b, c];
+                  const setters = [setA, setB, setC];
+                  return React.createElement("input", {
+                    key: label,
+                    type: "number",
+                    step: "any",
+                    title: label,
+                    readOnly: supported,
+                    value: vals[i],
+                    onChange: supported
+                      ? undefined
+                      : (e) => {
+                          setters[i](Number(e.target.value));
+                          setChecked(false);
+                        },
+                  });
+                })
+              )
+            ),
+            invalidA &&
+              React.createElement("p", { className: "error" }, "Coefficient a must be non-zero."),
+            React.createElement(
+              "div",
+              { className: "representationBox" },
+              React.createElement("h3", null, "Equation"),
+              React.createElement(Latex, { tex: quadEqLatex(a, b, c), className: "formulaBox" })
+            ),
+            React.createElement(
+              "div",
+              { className: "rowBetween workingHeader" },
+              React.createElement("h3", null, "Key features"),
+              React.createElement(
+                "button",
+                { type: "button", className: "outlineButton small", onClick: () => setShowWorking(!showWorking) },
+                showWorking ? "Hide" : "Show",
+                " details"
+              )
+            ),
+            showWorking &&
+              React.createElement(
+                "div",
+                { className: "working" },
+                React.createElement("p", null, "Goal: sketch with shape (happy/sad), y-intercept, x-intercepts, turning point — see ", React.createElement("code", null, "docs/parabolas/"), " handout."),
+                React.createElement("p", null, "y-intercept: ", React.createElement(Latex, { tex: "(0,c) = (0," + texNum(c) + ")" })),
+                !invalidA &&
+                  React.createElement(
+                    "p",
+                    null,
+                    "Discriminant ",
+                    React.createElement(Latex, { tex: `\\Delta = b^{2}-4ac = ${texNum(D)}` }),
+                    r.kind === "none" ? " → no real x-intercepts." : r.kind === "one" ? " → one x-intercept (touch)." : " → two x-intercepts."
+                  ),
+                v &&
+                  React.createElement(
+                    "p",
+                    null,
+                    "Turning point: ",
+                    React.createElement(Latex, {
+                      tex: `x_{\\mathrm{TP}} = -\\frac{b}{2a} = ${texNum(v.x)},\\quad y_{\\mathrm{TP}} = ${texNum(v.y)}`,
+                    })
+                  )
+              )
+          ),
+          React.createElement("div", { className: "card" }, React.createElement(ParabolaPlot, { a, b, c }))
+        ),
+        React.createElement(
+          "section",
+          { className: "card lowerCard" },
+          React.createElement(
+            "div",
+            { className: teacherMode ? "tabs three" : "tabs two" },
+            React.createElement(TabButton, { active: bottomTab === "student", onClick: () => setBottomTab("student") }, "Student practice"),
+            React.createElement(TabButton, { active: bottomTab === "howto", onClick: () => setBottomTab("howto") }, "How to use"),
+            teacherMode && React.createElement(TabButton, { active: bottomTab === "teacher", onClick: () => setBottomTab("teacher") }, "Teacher resources")
+          ),
+          bottomTab === "student" &&
+            React.createElement(
+              "div",
+              { className: "tabContent" },
+              React.createElement(
+                "div",
+                { className: "rowBetween" },
+                React.createElement("h2", null, "Student practice"),
+                React.createElement(
+                  "div",
+                  { className: "buttonRow" },
+                  React.createElement(
+                    "button",
+                    {
+                      type: "button",
+                      className: practiceMode === "scaffolded" ? "pill activePill" : "pill",
+                      onClick: () => {
+                        setPracticeMode("scaffolded");
+                        setChecked(false);
+                      },
+                    },
+                    "Scaffolded"
+                  ),
+                  React.createElement(
+                    "button",
+                    {
+                      type: "button",
+                      className: practiceMode === "unscaffolded" ? "pill activePill" : "pill",
+                      onClick: () => {
+                        setPracticeMode("unscaffolded");
+                        setChecked(false);
+                      },
+                    },
+                    "Unscaffolded"
+                  ),
+                  React.createElement("button", { type: "button", className: "primaryButton", onClick: () => setChecked(true) }, "Check working"),
+                  React.createElement("button", { type: "button", className: "outlineButton", onClick: clearPractice }, "Clear")
+                )
+              ),
+              React.createElement(
+                "p",
+                { className: "muted" },
+                "Scaffolded steps follow the handout template: shape, y-intercept, turning point, then x-intercepts (type none if there are none)."
+              ),
+              practiceMode === "unscaffolded"
+                ? React.createElement(StepInput, {
+                    title: "Turning point",
+                    prompt: "Enter the turning point as x,y (two numbers separated by a comma).",
+                    hint: "Match the purple point on the graph.",
+                    value: answers.vertexPair,
+                    onChange: (val) => updateAnswer("vertexPair", val),
+                    placeholder: v ? `${fmt(v.x, 4)},${fmt(v.y, 4)}` : "—",
+                    checked,
+                    correct: checks.vertexPairOk,
+                    supported: true,
+                    incorrectMessage: "Compare with x_TP and y_TP in the Key features panel.",
+                  })
+                : React.createElement(React.Fragment, null,
+                    React.createElement(ShapePick, {
+                      value: answers.shape,
+                      onChange: (val) => updateAnswer("shape", val),
+                    }),
+                    React.createElement(ScaffoldedStepList, {
+                      steps: [
+                        {
+                          id: "yint",
+                          render: () =>
+                            React.createElement(StepInput, {
+                              title: "y-intercept",
+                              prompt: "Substitute x = 0. What is y = c?",
+                              hint: "Single number.",
+                              value: answers.yint,
+                              onChange: (val) => updateAnswer("yint", val),
+                              placeholder: invalidA ? "—" : fmt(c, 4),
+                              checked,
+                              correct: checks.yintOk,
+                              supported: true,
+                              incorrectMessage: "At x = 0, y equals c.",
+                            }),
+                        },
+                        {
+                          id: "xtp",
+                          render: () =>
+                            React.createElement(StepInput, {
+                              title: "Turning point x",
+                              prompt: "Use x_TP = −b/(2a).",
+                              hint: "Decimal is fine.",
+                              value: answers.xtp,
+                              onChange: (val) => updateAnswer("xtp", val),
+                              placeholder: v ? fmt(v.x, 4) : "—",
+                              checked,
+                              correct: checks.xtpOk,
+                              supported: true,
+                              incorrectMessage: "Compare with −b/(2a) in the details.",
+                            }),
+                        },
+                        {
+                          id: "ytp",
+                          render: () =>
+                            React.createElement(StepInput, {
+                              title: "Turning point y",
+                              prompt: "Substitute x_TP into the quadratic.",
+                              hint: "Decimal is fine.",
+                              value: answers.ytp,
+                              onChange: (val) => updateAnswer("ytp", val),
+                              placeholder: v ? fmt(v.y, 4) : "—",
+                              checked,
+                              correct: checks.ytpOk,
+                              supported: true,
+                              incorrectMessage: "Evaluate y = ax² + bx + c at the turning x.",
+                            }),
+                        },
+                        {
+                          id: "roots",
+                          render: () =>
+                            React.createElement(StepInput, {
+                              title: "x-intercepts",
+                              prompt:
+                                r.kind === "none"
+                                  ? "There are no real x-intercepts. Type none."
+                                  : "Enter x-coordinates of x-intercepts, comma-separated (smaller first if two).",
+                              hint: "Use none if Δ < 0.",
+                              value: answers.roots,
+                              onChange: (val) => updateAnswer("roots", val),
+                              placeholder: rootsPlaceholder(),
+                              checked,
+                              correct: checks.rootsOk,
+                              supported: true,
+                              incorrectMessage: "Compare with the green marks on the x-axis (or none).",
+                            }),
+                        },
+                      ],
+                    })),
+              checked &&
+                React.createElement(
+                  "p",
+                  { className: allCorrect ? "note correct" : "note incorrect" },
+                  invalidA
+                    ? "Fix a ≠ 0 before checking."
+                    : allCorrect
+                    ? "Excellent — answers match this parabola."
+                    : "Some answers need attention. Use the graph and key features."
+                )
+            ),
+          bottomTab === "howto" &&
+            React.createElement(
+              "div",
+              { className: "tabContent" },
+              React.createElement(InstructionsDetails, { title: "How to use this applet", defaultOpen: true },
+                React.createElement(
+                  "ul",
+                  null,
+                  React.createElement("li", null, "Read ", React.createElement("strong", null, "a, b, c"), " from ", React.createElement("Latex", { tex: "y = ax^{2}+bx+c" }), " and watch the graph update."),
+                  React.createElement("li", null, "Use ", React.createElement("strong", null, "Show details"), " for discriminant, intercepts, and turning point — aligned with the printable sheet in ", React.createElement("code", null, "docs/parabolas/"), "."),
+                  React.createElement("li", null, "Under ", React.createElement("strong", null, "Student practice"), ", scaffolded steps mirror the template; unscaffolded asks only for the turning point pair."),
+                  React.createElement("li", null, React.createElement("strong", null, "Copy link"), " shares geometry and UI options.")
+                ))
+            ),
+          teacherMode &&
+            bottomTab === "teacher" &&
+            React.createElement(
+              "div",
+              { className: "tabContent" },
+              React.createElement("h2", null, "Teacher resources"),
+              React.createElement("h3", null, "Voice-over sketch"),
+              React.createElement("p", null, "Name a, b, c; decide happy vs sad from the sign of a; read (0, c); solve ax² + bx + c = 0 for x-intercepts; compute (−b/(2a), f(−b/(2a))); draw smooth curve symmetric about the axis x = x_TP."),
+              React.createElement("h3", null, "Link to handout"),
+              React.createElement("p", { className: "muted" }, "Student instructions and blank grids live in docs/parabolas (PDF and LaTeX source).")
+            )
+        )
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>
